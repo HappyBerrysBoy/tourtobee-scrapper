@@ -30,7 +30,188 @@ import com.google.gson.GsonBuilder;
 
 
 
-public class KRTHandler extends _WebsiteHandler{
+public class KRTHandler extends _TouristAgencyHandler{
+	
+	
+	@Override
+	public ArrayList<Prd> scrapPrd(CloseableHttpClient httpclient,
+			Website website, HashMap<String, String> options, HashSet<String> insPrds) {
+		ArrayList<Prd> prdList = new ArrayList<Prd>();
+		try {
+			HashSet<String> prdUrls = new HashSet<String>();
+			ArrayList<Menu> menuList = getMenuUrls(this.getHtml(httpclient, website));
+			
+			for (Menu menu : menuList){
+				String menuUrl = menu.mLink;
+				Website subSite = new Website();
+				subSite.setUrl(menuUrl);
+				subSite.setMethod(website.getMethod());
+				subSite.setEncoding(website.getEncoding());
+				prdUrls.addAll(getPrdUrls(this.getHtml(httpclient, subSite)));
+				
+				log(menu.mMenu, String.valueOf(prdUrls.size()));
+				
+				int prdCnt = 0;
+				for(String prdUrl : prdUrls){
+					prdCnt++;
+					Prd prd = new Prd();
+					
+					String prdNo = prdUrl.split("good_cd")[1].split("&")[0].replace("=", "");
+					
+					if ((insPrds != null && insPrds.contains(prdNo))) continue; 
+					
+					Website prdSite = new Website();
+					prdSite.setUrl("http://www.krt.co.kr" + prdUrl);
+					prdSite.setMethod(website.getMethod());
+					prdSite.setEncoding(website.getEncoding());
+					String prdHtml = this.removeComment(this.getHtml(httpclient, prdSite));
+					
+					prd.setTagnId("KRT");
+					prd.setPrdNo(prdNo);
+					prd.setPrdUrl(prdSite.getUrl());
+					prd.setPrdNm(this.removeAllTags(this.getValueByClass(prdHtml, "tit_text")));
+					
+					if (menu.mD1code.equals("G3")){
+						prd.setTrDiv(PRD_CLASS.get("허니문"));
+						prd.setDmstDiv("A");
+					}else if (menu.mD1code.equals("G5")){
+						prd.setTrDiv(PRD_CLASS.get("국내"));
+						prd.setDmstDiv("D");
+					}else if (menu.mD1code.equals("G7")){
+						prd.setTrDiv(PRD_CLASS.get("골프"));
+						prd.setDmstDiv("A");
+					}else {
+						prd.setTrDiv(PRD_CLASS.get("패키지"));
+						prd.setDmstDiv("A");
+					}
+					
+					ArrayList<String> areaCodeList = findGetAreaString(prd.getPrdNm());
+					if (areaCodeList.size() <= 0) areaCodeList = findGetAreaString(menu.mMenu);
+					ArrayList<TtrTrArea> areaList = new ArrayList<TtrTrArea>();
+					for (String areaCode :  areaCodeList){
+						TtrTrArea area = new TtrTrArea();
+						String[] areaCodeSplit = areaCode.split("/");
+						area.setTrCityCd(areaCodeSplit[0]);
+						area.setTrNtCd(areaCodeSplit[1]);
+						area.setTrCntt(areaCodeSplit[2]);
+						areaList.add(area);
+					}
+					prd.setAreaList(areaList);
+					
+					prdList.add(prd);
+					log("  " + prd.getPrdNo(), String.valueOf(prdCnt) + "/" + String.valueOf(prdUrls.size()));
+				}
+
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return prdList;
+	}
+	
+
+	@Override
+	public ArrayList<PrdDtl> scrapPrdDtlSmmry(CloseableHttpClient httpclient,
+			Website website, HashMap<String, String> options, String prdUrl, String prdNo) {
+		
+		HashSet<String> monthSet = new HashSet<String>();
+		if (options != null){
+			if (options.get("until") != null){
+				monthSet = Util.getYearMonthSet(options.get("until"));
+			}
+			if (options.get("month") != null){
+				monthSet.add(options.get("month"));
+			}
+		}else{
+			monthSet.add(getSystemMonth());
+		}
+		
+		ArrayList<PrdDtl> prdDtlList = new ArrayList<PrdDtl>();
+		for (String month : monthSet){
+			String prtType = prdUrl.split("/")[prdUrl.split("/").length - 1].split("_")[0];
+
+			String prdDtlListUrl = "http://www.krt.co.kr/_inc2014/_StartList.asp?"
+							+ "param1=" + prdNo
+							+ "&param2=" + month
+							+ "&param3=" + getSystemMonth()
+							+ "&param4=" + prtType
+							+ "&param5=0"
+							+ "&param6=" + getSystemMonth();
+			Website prdDtlListSite = new Website();
+			prdDtlListSite.setUrl(prdDtlListUrl);
+			prdDtlListSite.setMethod("GET");
+			prdDtlListSite.setEncoding(website.getEncoding());
+			
+			Html prdDtlListHtml = new Html(this.getHtml(httpclient, prdDtlListSite));
+			prdDtlListHtml = prdDtlListHtml.getTag("div").getTag("table");
+			
+			while (true){
+				prdDtlListHtml = new Html(prdDtlListHtml.toString().substring(1));
+				String subHtmlStr = prdDtlListHtml.getTag("table").toString();
+				
+				if (subHtmlStr.trim().length() <= 0) break;
+				
+				Html subHtml = new Html(subHtmlStr);
+				String depDt = subHtml.getTag("TD").removeAllTags().convertSpecialChar().toString();
+				String wkDay =  depDt.split("\\(")[1].substring(0, 1);
+				depDt = month.substring(0, 4) + depDt.split("\\(")[0].replace("/", "").trim();
+				
+				String feeAd = subHtml.removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString();
+				feeAd = feeAd.replace(",", "").trim();
+				String seq = subHtml.removeTag("TD").removeTag("TD").getTag("TD").toString();
+				String seqArr[] = seq.split("((?i)href)=[\"\']")[1].split("((?i)catNum)=")[1].split("_");
+				seq = seqArr[4] + "_" + seqArr[5];
+				String name = subHtml.removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
+				String airLine = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().toString();
+				airLine = airLine.split("alt=[\"\']")[1];
+				airLine = airLine.split("\\.")[0];
+				String depTm = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString();
+				depTm = depTm.replaceAll("[\\(|\\)|:]*", "").trim();
+				String prdSt = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
+				if (prdSt.equals("예약마감")){
+					prdSt = "예약마감";
+				}else if (prdSt.equals("예약대기")){
+					prdSt = "대기예약";
+				}else if (prdSt.equals("예약가능")){
+					prdSt = "예약가능";
+				}else if (prdSt.equals("출발예정")){
+					prdSt = "예약가능";
+				}else if (prdSt.equals("출발확정")){
+					prdSt = "출발확정";
+				}else if (prdSt.equals("마감임박")){
+					prdSt = "예약가능";
+				}else{
+					prdSt = "예약가능";
+				}
+				
+				prdDtlListHtml = prdDtlListHtml.removeTag("tr");
+				
+//				System.out.println(depDt + "/" + wkDay + "/" + feeAd + "/" + seq + "/" + name + "/" + depTm + "/" + prdSt);
+//				System.out.println("==================================");
+				PrdDtl prdDtl = new PrdDtl();
+				prdDtl.setPrdNo(prdNo);
+				prdDtl.setPrdSeq(seq);
+				prdDtl.setDepDt(depDt + depTm);
+				prdDtl.setDepDtYmd(depDt);
+				prdDtl.setDepDtHm(depTm);
+				prdDtl.setDepDtWd(WEEK_DAY_NUMBER.get(wkDay));
+				prdDtl.setPrdDtlNm(name);
+				prdDtl.setArlnId(airLine);
+				prdDtl.setPrdFeeAd(feeAd);
+				prdDtl.setPrdSt(prdSt);
+				
+				prdDtlList.add(prdDtl);
+			}
+		}
+		
+		return prdDtlList;
+	}
+
+
+
+
 
 	@Override
 	public ArrayList getResult(CloseableHttpClient httpclient, Website website, HashMap<String, String> options) {

@@ -5,6 +5,7 @@ import static hnc.tourtobee.code.Codes.initCodes;
 import hnc.tourtobee.scrapper.dataobject.Prd;
 import hnc.tourtobee.scrapper.dataobject.PrdDtl;
 import hnc.tourtobee.scrapper.dataobject.TtrTrArea;
+import hnc.tourtobee.scrapper.handler.website._TouristAgencyHandler;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,6 +13,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 
 import jh.project.httpscrapper.ScrapItem;
 import jh.project.httpscrapper.ScrapResult;
@@ -24,15 +28,11 @@ import oracle.jdbc.pool.OracleDataSource;
 
 public class ScrappingEngine {
 	
-	public void insertPrd(Connection conn, ScrapResult scrapResult) {
-		ArrayList<_DataObject> prdList = scrapResult.getResults();
-		
-		for(_DataObject dataObject : prdList){
+	public void insertPrd(Connection conn, ArrayList<Prd> prdList) {
+		for(Prd prd : prdList){
 			PreparedStatement pstmt;
 			
 			try{
-			Prd prd = (Prd)dataObject;
-			
 				String query = "merge into t_prd a using (select "
 										+ " ? tagn_id"
 										+ ", ? prd_no"
@@ -44,7 +44,14 @@ public class ScrappingEngine {
 										+ ", ? prd_url"
 										+ " from dual) b "
 							+ "on (a.tagn_id = b.tagn_id and a.prd_no = b.prd_no) "
-							+ "when matched then update set a.prd_nm= b.prd_nm, a.tr_div= b.tr_div, a.dmst_div= b.dmst_div, a.prd_desc= b.prd_desc, a.prd_desc_md= b.prd_desc_md, a.sel_dt = sysdate, a.prd_url = b.prd_url "
+							+ "when matched then update set "
+										+ "a.prd_nm= b.prd_nm"
+										+ ", a.tr_div= b.tr_div"
+										+ ", a.dmst_div= b.dmst_div"
+										+ ", a.prd_desc= b.prd_desc"
+										+ ", a.prd_desc_md= b.prd_desc_md"
+										+ ", a.sel_dt = sysdate"
+										+ ", a.prd_url = b.prd_url "
 							+ "when not matched then insert (tagn_id, prd_no, prd_nm, tr_div, dmst_div, prd_desc, prd_desc_md, sel_dt, prd_url) "
 							+ "values ( b.tagn_id, b.prd_no, b.prd_nm, b.tr_div, b.dmst_div, b.prd_desc, b.prd_desc_md, sysdate, b.prd_url)";
 				pstmt = conn.prepareStatement(query);
@@ -130,28 +137,28 @@ public class ScrappingEngine {
 						+ " from dual) b"
 					+ " on (a.tagn_id = b.tagn_id and a.prd_no = b.prd_no and a.prd_seq = b.prd_seq)"
 					+ " when matched then update set "
-										+ "a.PRD_DTL_NM =b.PRD_DTL_NM"
-										+ ", a.DEP_DT = to_date(b.DEP_DT, 'yyyymmddhh24mi')"
-										+ ", a.ARR_DT = to_date(b.ARR_DT, 'yyyymmddhh24mi')"
-										+ ", a.TR_TERM = TRUNC(to_date(b.ARR_DT, 'yyyymmddhh24mi')) - TRUNC(to_date(b.DEP_DT, 'yyyymmddhh24mi')) + 1"
-										+ ", a.DEP_ARPT =b.DEP_ARPT"
-										+ ", a.ARR_ARPT =b.ARR_ARPT"
-										+ ", a.ARLN_ID =b.ARLN_ID"
-										+ ", a.PRD_ST =b.PRD_ST"
-										+ ", a.PRD_URL =b.PRD_URL"
-										+ ", a.PRD_FEE_AD =b.PRD_FEE_AD"
-										+ ", a.PRD_FEE_CH =b.PRD_FEE_CH"
-										+ ", a.PRD_FEE_BB =b.PRD_FEE_BB"
-										+ ", a.CMPS_SEAT =b.CMPS_SEAT"
-										+ ", a.EXG_DIV =b.EXG_DIV"
+										+ (prdDtl.getPrdDtlNm().trim().length() > 0 ? "a.PRD_DTL_NM =b.PRD_DTL_NM" : "")
+										+ (prdDtl.getDepDt().trim().length() > 0 ? ", a.DEP_DT = to_date(b.DEP_DT, 'yyyymmddhh24mi')" : "")
+										+ (prdDtl.getArrDt().trim().length() > 0 ? ", a.ARR_DT = to_date(b.ARR_DT, 'yyyymmddhh24mi')" : "")
+										+ (prdDtl.getDepDt().trim().length() > 0 && prdDtl.getArrDt().trim().length() > 0 ? ", a.TR_TERM = TRUNC(to_date(b.ARR_DT, 'yyyymmddhh24mi')) - TRUNC(to_date(b.DEP_DT, 'yyyymmddhh24mi')) + 1" : "")
+										+ (prdDtl.getDepArpt().trim().length() > 0 ? ", a.DEP_ARPT =b.DEP_ARPT" : "")
+										+ (prdDtl.getArrArpt().trim().length() > 0 ? ", a.ARR_ARPT =b.ARR_ARPT" : "")
+										+ (prdDtl.getArlnId().trim().length() > 0 ? ", a.ARLN_ID =b.ARLN_ID" : "")
+										+ (prdDtl.getPrdSt().trim().length() > 0 ? ", a.PRD_ST =b.PRD_ST" : "")
+										+ (prdDtl.getPrdUrl().trim().length() > 0 ? ", a.PRD_URL =b.PRD_URL" : "")
+										+ (Integer.parseInt(prdDtl.getPrdFeeAd()) > 0 ? ", a.PRD_FEE_AD =b.PRD_FEE_AD" : "")
+										+ (Integer.parseInt(prdDtl.getPrdFeeCh()) > 0 ? ", a.PRD_FEE_CH =b.PRD_FEE_CH" : "")
+										+ (Integer.parseInt(prdDtl.getPrdFeeBb()) > 0 ? ", a.PRD_FEE_BB =b.PRD_FEE_BB" : "")
+//										+ (prdDtl.getCmpsSeat().trim().length() > 0 ? ", a.CMPS_SEAT =b.CMPS_SEAT" : "")
+										+ (prdDtl.getExgDiv().trim().length() > 0 ? ", a.EXG_DIV =b.EXG_DIV" : "")
 										+ ", a.SEL_DT =sysdate"
-										+ ", a.TR_TERM_BAK = b.TR_TERM_BAK"
-										+ ", a.DEP_DT_YMD = b.DEP_DT_YMD"
-										+ ", a.DEP_DT_HM = b.DEP_DT_HM"
-										+ ", a.DEP_DT_WD = b.DEP_DT_WD"
-										+ ", a.ARR_DT_YMD = b.ARR_DT_YMD"
-										+ ", a.ARR_DT_HM = b.ARR_DT_HM"
-										+ ", a.ARR_DT_WD = b.ARR_DT_WD"
+//										+ (prdDtl.getTrTermBak().trim().length() > 0 ? ", a.TR_TERM_BAK = b.TR_TERM_BAK" : "")
+										+ (prdDtl.getDepDtYmd().trim().length() > 0 ? ", a.DEP_DT_YMD = b.DEP_DT_YMD" : "")
+										+ (prdDtl.getDepDtHm().trim().length() > 0 ? ", a.DEP_DT_HM = b.DEP_DT_HM" : "")
+										+ (prdDtl.getDepDtWd().trim().length() > 0 ? ", a.DEP_DT_WD = b.DEP_DT_WD" : "")
+										+ (prdDtl.getArrDtYmd().trim().length() > 0 ? ", a.ARR_DT_YMD = b.ARR_DT_YMD" : "")
+										+ (prdDtl.getArrDtHm().trim().length() > 0 ? ", a.ARR_DT_HM = b.ARR_DT_HM" : "")
+										+ (prdDtl.getArrDtWd().trim().length() > 0 ? ", a.ARR_DT_WD = b.ARR_DT_WD" : "")
 					+ " when not matched then insert (TAGN_ID, PRD_NO, PRD_SEQ, PRD_DTL_NM, DEP_DT, ARR_DT, TR_TERM, DEP_ARPT, ARR_ARPT, ARLN_ID, PRD_ST, PRD_URL, PRD_FEE_AD, PRD_FEE_CH, PRD_FEE_BB, CMPS_SEAT, EXG_DIV, SEL_DT, TR_TERM_BAK, DEP_DT_YMD, DEP_DT_HM, DEP_DT_WD, ARR_DT_YMD, ARR_DT_HM, ARR_DT_WD)"
 					+ " values ( b.tagn_id , b.prd_no , b.PRD_SEQ , b.PRD_DTL_NM , to_date(b.DEP_DT, 'yyyymmddhh24mi') , to_date(b.ARR_DT, 'yyyymmddhh24mi') , TRUNC(to_date(b.ARR_DT, 'yyyymmddhh24mi')) - TRUNC(to_date(b.DEP_DT, 'yyyymmddhh24mi')) + 1 , b.DEP_ARPT , b.ARR_ARPT , b.ARLN_ID ,b.PRD_ST , b.PRD_URL , b.PRD_FEE_AD , b.PRD_FEE_CH , b.PRD_FEE_BB , b.CMPS_SEAT , b.EXG_DIV , sysdate, b.TR_TERM_BAK, b.DEP_DT_YMD, b.DEP_DT_HM, b.DEP_DT_WD, b.ARR_DT_YMD, b.ARR_DT_HM, b.ARR_DT_WD)";
 		
@@ -222,7 +229,6 @@ public class ScrappingEngine {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();
@@ -231,21 +237,34 @@ public class ScrappingEngine {
 					HashMap<String, String> option = new HashMap<String, String>();
 					option.put("until", toMonth);
 //					option.put("month", "201408");
-					ScrapResult sresult = sc.websiteScrap(website, option);
 					
-					log(website.getId(), "Scrap Finish");
+					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
+					CloseableHttpClient httpclient = HttpClients.createDefault();
 					
-					se.insertPrd(conn, sresult);
+					ArrayList<Prd> prdList = handler.scrapPrd(httpclient, website, option, null);
+					se.insertPrd(conn, prdList);
+					
+					for (Prd prd : prdList){
+						ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, option, prd.getPrdUrl(), prd.getPrdNo());
+						
+						for (PrdDtl prdDtl : prdDtlList){
+							se.mergePrdDtl(conn, prdDtl);
+						}
+					}
+					
+					
+					
+					
+					
 
-					log(website.getId(), "DB Insert Finish");
-					
-	//				ArrayList<_DataObject> resultList = sresult.getResults(); 
-	//				
-	//				for(_DataObject dataObject : resultList){
-	//					
-	//					Prd prd = (Prd)dataObject;
-	//					
-	//				}
+//					ScrapResult sresult = sc.websiteScrap(website, option);
+//					
+//					log(website.getId(), "Scrap Finish");
+//					
+//					se.insertPrd(conn, sresult);
+//
+//					log(website.getId(), "DB Insert Finish");
+
 				}
 			}
 		} catch (SQLException e) {

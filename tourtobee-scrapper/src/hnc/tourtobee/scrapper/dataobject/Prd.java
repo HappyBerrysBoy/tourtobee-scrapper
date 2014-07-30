@@ -16,17 +16,17 @@ public class Prd extends _DataObject{
 	ArrayList<PrdDtl> prdDtlLst;
 	ArrayList<TtrTrArea> areaList;
 	
-	private String tagnId;
-	private String prdNo;
-	private String cnttDiv;
-	private String ntCd;
-	private String arrCity;
-	private String prdNm;
-	private String trDiv;
-	private String dmstDiv;
-	private String prdDesc;
-	private String prdDescMd;
-	private String prdUrl;
+	private String tagnId = "";
+	private String prdNo = "";
+	private String cnttDiv = "";
+	private String ntCd = "";
+	private String arrCity = "";
+	private String prdNm = "";
+	private String trDiv = "";
+	private String dmstDiv = "";
+	private String prdDesc = "";
+	private String prdDescMd = "";
+	private String prdUrl = "";
 	
 	
 	public Prd() {

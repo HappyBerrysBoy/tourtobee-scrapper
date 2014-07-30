@@ -34,8 +34,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 	
 	
 	@Override
-	public ArrayList<Prd> scrapPrd(CloseableHttpClient httpclient,
-			Website website, HashMap<String, String> options, HashSet<String> insPrds) {
+	public ArrayList<Prd> scrapPrd(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, HashSet<String> insPrds) {
 		ArrayList<Prd> prdList = new ArrayList<Prd>();
 		try {
 			HashSet<String> prdUrls = new HashSet<String>();
@@ -113,8 +112,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 	
 
 	@Override
-	public ArrayList<PrdDtl> scrapPrdDtlSmmry(CloseableHttpClient httpclient,
-			Website website, HashMap<String, String> options, String prdUrl, String prdNo) {
+	public ArrayList<PrdDtl> scrapPrdDtlSmmry(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, String prdUrl, String prdNo) {
 		
 		HashSet<String> monthSet = new HashSet<String>();
 		if (options != null){

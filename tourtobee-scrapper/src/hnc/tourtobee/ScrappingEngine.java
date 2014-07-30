@@ -9,10 +9,12 @@ import hnc.tourtobee.scrapper.handler.website._TouristAgencyHandler;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -27,6 +29,26 @@ import oracle.jdbc.pool.OracleDataSource;
 
 
 public class ScrappingEngine {
+	
+	public HashSet<String> getInsPrds(Connection conn, String tagnId){
+		HashSet<String> insPrds = new HashSet<String>();
+		try{
+			String query = "SELECT PRD_NO"
+						+ " FROM T_PRD"
+						+ " WHERE TAGN_ID = ?";
+			PreparedStatement pstmt = conn.prepareStatement(query);
+			pstmt.setString(1, tagnId);
+			ResultSet rs = pstmt.executeQuery();
+			
+			while(rs.next()){
+				insPrds.add(rs.getString(1));
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return insPrds;
+	}
+	
 	
 	public void insertPrd(Connection conn, ArrayList<Prd> prdList) {
 		for(Prd prd : prdList){
@@ -103,8 +125,6 @@ public class ScrappingEngine {
 		}
 		
 	}
-	
-	
 	
 	
 	public void mergePrdDtl(Connection conn, PrdDtl prdDtl){

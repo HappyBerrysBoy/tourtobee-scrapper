@@ -261,7 +261,8 @@ public class ScrappingEngine {
 					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 					CloseableHttpClient httpclient = HttpClients.createDefault();
 					
-					ArrayList<Prd> prdList = handler.scrapPrd(httpclient, website, option, null);
+					HashSet<String> insPrds = se.getInsPrds(conn, website.getId());
+					ArrayList<Prd> prdList = handler.scrapPrd(httpclient, website, option, insPrds);
 					se.insertPrd(conn, prdList);
 					
 					for (Prd prd : prdList){

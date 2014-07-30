@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scrap-item>
+	<item id="tour_list_agencies">TourlistAgencies</item>
+	<option id="month">조회 하고자하는 월</option>
+	<option id="until">현재부터 ~(년월) 까지 조회한다.</option>
+</scrap-item>

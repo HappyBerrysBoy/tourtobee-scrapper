@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site-list>
+	<site id="KRT" handler="hnc.tourtobee.scrapper.handler.website.KRTHandler">
+		<name>KRT 여행사</name>
+		<url>http://www.krt.co.kr/_js2014/menu2014.js</url>
+		<encoding>euc-kr</encoding>
+		<method>GET</method>
+	</site>
+</site-list>

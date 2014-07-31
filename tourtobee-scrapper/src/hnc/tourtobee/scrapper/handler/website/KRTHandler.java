@@ -49,6 +49,8 @@ public class KRTHandler extends _TouristAgencyHandler{
 				subSite.setMethod(website.getMethod());
 				subSite.setEncoding(website.getEncoding());
 				
+				log(website.getId() + " - Get Menu", menu.mMenu);
+				
 				for (String prdUrl : getPrdUrls(this.getHtml(httpclient, subSite))){
 					prdUrls.add(prdUrl);
 					prdD1Code.put(prdUrl, menu.mD1code);
@@ -104,7 +106,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 				prd.setAreaList(areaList);
 				
 				prdList.add(prd);
-				log("  " + prd.getPrdNo(), String.valueOf(prdCnt) + "/" + String.valueOf(prdUrls.size()));
+				log(website.getId() + " - Prd(" + prd.getPrdNo() + ")", String.valueOf(prdCnt) + "/" + String.valueOf(prdUrls.size()));
 			}
 			
 		} catch (Exception e) {

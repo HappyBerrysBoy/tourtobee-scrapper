@@ -275,30 +275,18 @@ public class ScrappingEngine {
 					CloseableHttpClient httpclient = HttpClients.createDefault();
 					
 					HashSet<String> insPrds = se.getInsPrds(conn, website.getId());
-					ArrayList<Menu> menuList = handler.scrapMenu(httpclient, website);
-					HashMap<String, Menu> prdUrls = new HashMap<String, Menu>();
-					
-					if (menuList == null) continue;
-					for (Menu menu : menuList){
-						for (String prdUrl : menu.getPrdUrls()){
-							prdUrls.put(prdUrl, menu);
-						}
-					}
+					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, insPrds);
 					
 					int prdCnt = 0;
-					for (String prdUrl : prdUrls.keySet()){
-						Prd prd = handler.scrapPrd(httpclient, website, prdUrls.get(prdUrl), prdUrl, options, insPrds);
+					for (Prd prd : prdList){
 						if (prd == null) continue;
-						log(website.getId() + " Scrap Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
-						
 						se.insertPrd(conn, prd);
-						
 						log(website.getId() + " Insert Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
 						
 						prdCnt++;
 					}
 					
-					ArrayList<Prd> prdList = new ArrayList<Prd>();
+					
 					for (Prd prd : prdList){
 						log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
 						ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);

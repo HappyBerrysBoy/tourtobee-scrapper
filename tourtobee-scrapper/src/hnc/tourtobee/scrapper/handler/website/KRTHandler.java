@@ -33,102 +33,38 @@ import com.google.gson.GsonBuilder;
 public class KRTHandler extends _TouristAgencyHandler{
 	
 	
+	
+	
 	@Override
-	public ArrayList<Menu> scrapMenu(CloseableHttpClient httpclient,
-			Website website) {
+	public ArrayList<Prd> scrapPrdList(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, HashSet<String> insPrds) {
+		ArrayList<Prd> prdList = new ArrayList<Prd>();
+		ArrayList<Menu> menuList = this.scrapMenu(httpclient, website);
+		HashMap<String, Menu> prdUrlMenu = new HashMap<String, Menu>();
 		
-		ArrayList<Menu> menuList = new ArrayList<Menu>();
-		
-		try{
-			HashSet<String> prdUrls = new HashSet<String>();
-			HashMap<String, String> prdMenu = new HashMap<String, String>();
-			HashMap<String, String> prdD1Code = new HashMap<String, String>();
-			ArrayList<JsonMenu> jsonMenuList = getMenuUrls(this.getHtml(httpclient, website));
+		for (Menu menu : menuList){
+			HashSet<String> prdUrlSet = menu.getPrdUrls();
 			
-			for (JsonMenu jsonMenu : jsonMenuList){
-				String menuUrl = jsonMenu.mLink;
-				Website subSite = new Website();
-				subSite.setUrl(menuUrl);
-				subSite.setMethod(website.getMethod());
-				subSite.setEncoding(website.getEncoding());
-				
-				log(website.getId() + " - Get Menu", jsonMenu.mMenu);
-				
-				for (String prdUrl : getPrdUrls(this.getHtml(httpclient, subSite))){
-					prdUrls.add(prdUrl);
-					prdD1Code.put(prdUrl, jsonMenu.mD1code);
-					prdMenu.put(prdUrl, jsonMenu.mMenu);
-				}
-				
-				Menu menu = new Menu();
-				menu.setMenuName(jsonMenu.mMenu);
-				menu.setMenuCode(jsonMenu.mD1code);
-				menu.setPrdUrls(prdUrls);
-				
-				menuList.add(menu);
+			for (String prdUrl : prdUrlSet){
+				prdUrlMenu.put(prdUrl, menu);
 			}
-		}catch(Exception e){
-			log("scrapMenu", e.toString());
 		}
 		
-		return menuList;
-	}
-
-
-	@Override
-	public Prd scrapPrd(CloseableHttpClient httpclient, Website website, Menu menu, String prdUrl, HashMap<String, String> options, HashSet<String> insPrds){
-		Prd prd = new Prd();
-		try {
-			
+		HashSet<String> prdUrlSet = (HashSet<String>) prdUrlMenu.keySet();
+		for (String prdUrl : prdUrlSet){
 			String prdNo = prdUrl.split("good_cd")[1].split("&")[0].replace("=", "");
 			
-			if (insPrds!= null && insPrds.contains("prdNo")) return null;
-				
-			Website prdSite = new Website();
-			prdSite.setUrl("http://www.krt.co.kr" + prdUrl);
-			prdSite.setMethod(website.getMethod());
-			prdSite.setEncoding(website.getEncoding());
-			String prdHtml = this.removeComment(this.getHtml(httpclient, prdSite));
-			
-			prd.setTagnId(website.getId());
-			prd.setPrdNo(prdNo);
-			prd.setPrdUrl(prdSite.getUrl());
-			prd.setPrdNm(this.removeAllTags(this.getValueByClass(prdHtml, "tit_text")));
-			
-			if (menu.getMenuCode().equals("G3")){
-				prd.setTrDiv(PRD_CLASS.get("허니문"));
-				prd.setDmstDiv("A");
-			}else if (menu.getMenuCode().equals("G5")){
-				prd.setTrDiv(PRD_CLASS.get("국내"));
-				prd.setDmstDiv("D");
-			}else if (menu.getMenuCode().equals("G7")){
-				prd.setTrDiv(PRD_CLASS.get("골프"));
-				prd.setDmstDiv("A");
-			}else {
-				prd.setTrDiv(PRD_CLASS.get("패키지"));
-				prd.setDmstDiv("A");
+			if (insPrds == null || !insPrds.contains(prdNo)){
+				Prd prd = scrapPrd(httpclient, website, prdUrlMenu.get(prdUrl), prdUrl, options);
+				log("KRT Scrap Prd", prdNo);
+				prdList.add(prd);
 			}
-			
-			ArrayList<String> areaCodeList = findGetAreaString(prd.getPrdNm());
-			if (areaCodeList.size() <= 0) areaCodeList = findGetAreaString(menu.getMenuName());
-			ArrayList<TtrTrArea> areaList = new ArrayList<TtrTrArea>();
-			for (String areaCode :  areaCodeList){
-				TtrTrArea area = new TtrTrArea();
-				String[] areaCodeSplit = areaCode.split("/");
-				area.setTrCityCd(areaCodeSplit[0]);
-				area.setTrNtCd(areaCodeSplit[1]);
-				area.setTrCntt(areaCodeSplit[2]);
-				areaList.add(area);
-			}
-			prd.setAreaList(areaList);
-			
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
-		
-		return prd;
+		return prdList;
 	}
-	
+
+
+
+
 
 	@Override
 	public ArrayList<PrdDtl> scrapPrdDtlSmmry(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, Prd prd) {
@@ -241,7 +177,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 		
 		for (Menu menu : menuList){
 			for (String prdUrl : menu.getPrdUrls()){
-				Prd prd = scrapPrd(httpclient, website, menu, prdUrl, options, null);
+				Prd prd = scrapPrd(httpclient, website, menu, prdUrl, options);
 				ArrayList<PrdDtl> prdDtlSmmry = scrapPrdDtlSmmry(httpclient, website, options, prd);
 				
 				prd.setPrdDtlLst(prdDtlSmmry);
@@ -252,6 +188,97 @@ public class KRTHandler extends _TouristAgencyHandler{
 		return prdList;
 	}
 	
+private ArrayList<Menu> scrapMenu(CloseableHttpClient httpclient, Website website) {
+		
+		ArrayList<Menu> menuList = new ArrayList<Menu>();
+		
+		try{
+			HashSet<String> prdUrls = new HashSet<String>();
+			HashMap<String, String> prdMenu = new HashMap<String, String>();
+			HashMap<String, String> prdD1Code = new HashMap<String, String>();
+			ArrayList<JsonMenu> jsonMenuList = getMenuUrls(this.getHtml(httpclient, website));
+			
+			for (JsonMenu jsonMenu : jsonMenuList){
+				String menuUrl = jsonMenu.mLink;
+				Website subSite = new Website();
+				subSite.setUrl(menuUrl);
+				subSite.setMethod(website.getMethod());
+				subSite.setEncoding(website.getEncoding());
+				
+				log(website.getId() + " - Get Menu", jsonMenu.mMenu);
+				
+				for (String prdUrl : getPrdUrls(this.getHtml(httpclient, subSite))){
+					prdUrls.add(prdUrl);
+					prdD1Code.put(prdUrl, jsonMenu.mD1code);
+					prdMenu.put(prdUrl, jsonMenu.mMenu);
+				}
+				
+				Menu menu = new Menu();
+				menu.setMenuName(jsonMenu.mMenu);
+				menu.setMenuCode(jsonMenu.mD1code);
+				menu.setPrdUrls(prdUrls);
+				
+				menuList.add(menu);
+			}
+		}catch(Exception e){
+			log("scrapMenu", e.toString());
+		}
+		
+		return menuList;
+	}
+
+
+	
+	private Prd scrapPrd(CloseableHttpClient httpclient, Website website, Menu menu, String prdUrl, HashMap<String, String> options){
+		Prd prd = new Prd();
+		try {
+			
+			String prdNo = prdUrl.split("good_cd")[1].split("&")[0].replace("=", "");
+			
+			Website prdSite = new Website();
+			prdSite.setUrl("http://www.krt.co.kr" + prdUrl);
+			prdSite.setMethod(website.getMethod());
+			prdSite.setEncoding(website.getEncoding());
+			String prdHtml = this.removeComment(this.getHtml(httpclient, prdSite));
+			
+			prd.setTagnId(website.getId());
+			prd.setPrdNo(prdNo);
+			prd.setPrdUrl(prdSite.getUrl());
+			prd.setPrdNm(this.removeAllTags(this.getValueByClass(prdHtml, "tit_text")));
+			
+			if (menu.getMenuCode().equals("G3")){
+				prd.setTrDiv(PRD_CLASS.get("허니문"));
+				prd.setDmstDiv("A");
+			}else if (menu.getMenuCode().equals("G5")){
+				prd.setTrDiv(PRD_CLASS.get("국내"));
+				prd.setDmstDiv("D");
+			}else if (menu.getMenuCode().equals("G7")){
+				prd.setTrDiv(PRD_CLASS.get("골프"));
+				prd.setDmstDiv("A");
+			}else {
+				prd.setTrDiv(PRD_CLASS.get("패키지"));
+				prd.setDmstDiv("A");
+			}
+			
+			ArrayList<String> areaCodeList = findGetAreaString(prd.getPrdNm());
+			if (areaCodeList.size() <= 0) areaCodeList = findGetAreaString(menu.getMenuName());
+			ArrayList<TtrTrArea> areaList = new ArrayList<TtrTrArea>();
+			for (String areaCode :  areaCodeList){
+				TtrTrArea area = new TtrTrArea();
+				String[] areaCodeSplit = areaCode.split("/");
+				area.setTrCityCd(areaCodeSplit[0]);
+				area.setTrNtCd(areaCodeSplit[1]);
+				area.setTrCntt(areaCodeSplit[2]);
+				areaList.add(area);
+			}
+			prd.setAreaList(areaList);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return prd;
+	}
 	
 	public PrdDtl getProductDetail(CloseableHttpClient httpclient, Website prdDtlSite){
 		PrdDtl prdDtl = new PrdDtl();

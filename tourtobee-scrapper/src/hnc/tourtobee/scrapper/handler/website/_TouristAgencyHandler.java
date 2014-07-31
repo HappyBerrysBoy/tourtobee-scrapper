@@ -19,20 +19,42 @@ public class _TouristAgencyHandler extends _WebsiteHandler {
 		super();
 	}
 	
-	
-	public ArrayList<Menu> scrapMenu(CloseableHttpClient httpclient, Website website){
-		return null;
-	}
+	/**
+	 * 메뉴와 해당 메뉴에 포함된 상품의 url 정보를 스크래핑 한다.
+	 * @param httpclient
+	 * @param website
+	 * @return
+	 */
+//	public ArrayList<Menu> scrapMenu(CloseableHttpClient httpclient, Website website){
+//		return null;
+//	}
 	
 	/**
-	 * 상품 목록을 스크랩한다.
+	 * 상품 정보를 스크랩 한다.
 	 * @param httpclient
+	 * @param website
 	 * @param menu
-	 * @param options until(yyyymm), month(yyyymm) 를 키로 갖는 옵션을 가질 수 있다. (until:~까지 스크랩, month:특정월 스크랩)
-	 * @param insPrds 이미 입력된 상품 - 스크래핑에서 제외 된다.
-	 * @return 상품 목록
+	 * @param prdUrl 상품 정보 URL
+	 * @param options until, month 둘 중 하나의 옵션을 가진다.
+	 * @param insPrds 이미 입력된 상품 NO
+	 * @return 상품 정보
 	 */
-	public Prd scrapPrd(CloseableHttpClient httpclient, Website website, Menu menu, String prdUrl, HashMap<String, String> options, HashSet<String> insPrds){
+//	public Prd scrapPrd(CloseableHttpClient httpclient, Website website, Menu menu, String prdUrl, HashMap<String, String> options, HashSet<String> insPrds){
+//		return null;
+//	}
+	
+	
+	/**
+	 * 상품 정보를 스크랩 한다.
+	 * @param httpclient
+	 * @param website
+	 * @param menu
+	 * @param prdUrl 상품 정보 URL
+	 * @param options until, month 둘 중 하나의 옵션을 가진다.
+	 * @param insPrds 이미 입력된 상품 NO (입력에서 제외 됨)
+	 * @return 상품 정보 목록
+	 */
+	public ArrayList<Prd> scrapPrdList(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, HashSet<String> insPrds){
 		return null;
 	}
 	

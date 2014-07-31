@@ -91,6 +91,8 @@ public class ScrappingEngine {
 			pstmt.setString(7, prd.getPrdDescMd());
 			pstmt.setString(8, prd.getPrdUrl());
 			pstmt.executeUpdate();
+			pstmt.clearParameters();
+			pstmt.close();
 			
 			int index = 0;
 			ArrayList<TtrTrArea> areaList = prd.getAreaList();
@@ -99,6 +101,8 @@ public class ScrappingEngine {
 			pstmt.setString(1, prd.getTagnId());
 			pstmt.setString(2, prd.getPrdNo());
 			pstmt.executeUpdate();
+			pstmt.clearParameters();
+			pstmt.close();
 			
 			for (TtrTrArea area : areaList){
 				query = "insert into ttr_tr_area (tagn_id, prd_no, tr_area_seq, tr_cntt, tr_nt_cd, tr_city_cd, tr_site_cd) "
@@ -113,6 +117,8 @@ public class ScrappingEngine {
 				pstmt.setString(6, area.getTrCityCd());
 				pstmt.setString(7, area.getSiteCd());
 				pstmt.executeUpdate();
+				pstmt.clearParameters();
+				pstmt.close();
 				
 				index++;
 			}
@@ -122,6 +128,7 @@ public class ScrappingEngine {
 				mergePrdDtl(conn, prdDtl);
 			}
 			
+			pstmt.clearParameters();
 			pstmt.close();
 		}catch(Exception e){
 			log("insertPrd", e.toString());
@@ -211,7 +218,7 @@ public class ScrappingEngine {
 			pstmt.setString(23, prdDtl.getArrDtWd());
 			
 			pstmt.executeUpdate();
-			
+			pstmt.clearParameters();
 			pstmt.close();
 		}catch(Exception e){
 			log("getInsPrds", e.toString());
@@ -253,7 +260,7 @@ public class ScrappingEngine {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					if (!website.getId().equals("Hanjin")) continue;
+					if (website.getId().equals("Hanjin")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();

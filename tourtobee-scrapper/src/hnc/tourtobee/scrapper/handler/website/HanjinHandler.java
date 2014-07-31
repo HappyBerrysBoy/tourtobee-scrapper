@@ -30,7 +30,7 @@ public class HanjinHandler extends _TouristAgencyHandler {
 	public ArrayList<Menu> scrapMenu(CloseableHttpClient httpclient, Website website) {
 		Html html = new Html(this.getHtml(httpclient, website));
 		ArrayList<Menu> menuList = getMenuUrlList(website, html.removeComment().getValueByClass("mainNavitopd").toString());
-		return null;
+		return menuList;
 	}
 	
 	
@@ -41,6 +41,7 @@ public class HanjinHandler extends _TouristAgencyHandler {
 		String menuUrl = "";
 		Html html = new Html(htmlStr.substring(2));
 		
+		//해외패키지
 		Html categoryHtml = new Html(html.getTag("div").toString().substring(2));
 		categoryHtml = categoryHtml.removeTag("div");
 		
@@ -62,12 +63,75 @@ public class HanjinHandler extends _TouristAgencyHandler {
 			categoryHtml = categoryHtml.removeTag("div");
 		}
 		
-		for (Menu m : menuList){
-			System.out.println(m.getMenuName() + " : " + m.getMenuUrl());
+		//크루즈
+		categoryHtml = html.removeTag("div").removeTag("div").getTag("div");
+		
+		while(categoryHtml.getTag("div").toString().length() > 0){
+			Html subMenuHtml = categoryHtml.getTag("div");
+			
+			while(subMenuHtml.getTag("li").toString().length() > 0){
+				menuUrl = subMenuHtml.getTag("li").getTag("a").findRegex("href=[ \"']+[\\s\\S]*['\"]+").toString().replaceAll("href=", "").replaceAll("['\"]", "");
+				menuUrl = website.getUrl() + menuUrl;
+				menuName = subMenuHtml.getTag("li").getTag("a").removeAllTags().toString();
+				menu = new Menu();
+				menu.setMenuName(menuName);
+				menu.setMenuUrl(menuUrl);
+				menuList.add(menu);
+				
+				subMenuHtml = subMenuHtml.removeTag("li");
+			}
+			
+			categoryHtml = categoryHtml.removeTag("div");
+		}
+		
+		//허니문
+		categoryHtml = html.removeTag("div").removeTag("div").removeTag("div").getTag("div");
+		
+		while(categoryHtml.getTag("div").toString().length() > 0){
+			Html subMenuHtml = categoryHtml.getTag("div");
+			
+			while(subMenuHtml.getTag("li").toString().length() > 0){
+				menuUrl = subMenuHtml.getTag("li").getTag("a").findRegex("href=[ \"']+[\\s\\S]*['\"]+").toString().replaceAll("href=", "").replaceAll("['\"]", "");
+				menuUrl = website.getUrl() + menuUrl;
+				menuName = subMenuHtml.getTag("li").getTag("a").removeAllTags().toString();
+				menu = new Menu();
+				menu.setMenuName(menuName);
+				menu.setMenuUrl(menuUrl);
+				menuList.add(menu);
+				
+				subMenuHtml = subMenuHtml.removeTag("li");
+			}
+			
+			categoryHtml = categoryHtml.removeTag("div");
 		}
 		
 		
-//		System.out.println(packageHtml.removeTag("div").getTag("div"));
+		//골프
+		categoryHtml = html.removeTag("div").removeTag("div").removeTag("div").removeTag("div").getTag("div");
+		
+		while(categoryHtml.getTag("div").toString().length() > 0){
+			Html subMenuHtml = categoryHtml.getTag("div");
+			
+			while(subMenuHtml.getTag("li").toString().length() > 0){
+				menuUrl = subMenuHtml.getTag("li").getTag("a").findRegex("href=[ \"']+[\\s\\S]*['\"]+").toString().replaceAll("href=", "").replaceAll("['\"]", "");
+				menuUrl = website.getUrl() + menuUrl;
+				menuName = subMenuHtml.getTag("li").getTag("a").removeAllTags().toString();
+				menu = new Menu();
+				menu.setMenuName(menuName);
+				menu.setMenuUrl(menuUrl);
+				menuList.add(menu);
+				
+				subMenuHtml = subMenuHtml.removeTag("li");
+			}
+			
+			categoryHtml = categoryHtml.removeTag("div");
+		}
+//		부산출발은 직접 해줘야함...
+		menu = new Menu();
+		menu.setMenuUrl("http://www.kaltour.com/ProductOverseas/OverseasList?pkgdep=PUSSM&PKGMOK=06&LMNU=5_6_0_0&MNU2COD=174&MNUCOD=");
+		menu.setMenuName("부산출발");
+		menuList.add(menu);
+
 		return menuList;
 	}
 

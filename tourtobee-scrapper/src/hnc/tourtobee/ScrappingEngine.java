@@ -261,18 +261,24 @@ public class ScrappingEngine {
 					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 					CloseableHttpClient httpclient = HttpClients.createDefault();
 					
+					log(website.getId(), "INSERT PRD Start!!");
 					HashSet<String> insPrds = se.getInsPrds(conn, website.getId());
 					ArrayList<Prd> prdList = handler.scrapPrd(httpclient, website, option, insPrds);
 					se.insertPrd(conn, prdList);
+					log(website.getId(), "INSERT PRD End!!");
 					
+					log(website.getId(), "INSERT PRD_DTL Start!!");
+					int prdIndex = 0;
 					for (Prd prd : prdList){
+						prdIndex++;
+						log("\t", String.valueOf(prdIndex) + " / " + String.valueOf(prdList.size()));
 						ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, option, prd.getPrdUrl(), prd.getPrdNo());
 						
 						for (PrdDtl prdDtl : prdDtlList){
 							se.mergePrdDtl(conn, prdDtl);
 						}
 					}
-					
+					log(website.getId(), "INSERT PRD_DTL End!!");
 					
 					
 					

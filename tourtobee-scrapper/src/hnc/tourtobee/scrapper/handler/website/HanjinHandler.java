@@ -1,5 +1,6 @@
 package hnc.tourtobee.scrapper.handler.website;
 
+import hnc.tourtobee.scrapper.dataobject.Menu;
 import hnc.tourtobee.scrapper.dataobject.Prd;
 import hnc.tourtobee.scrapper.dataobject.PrdDtl;
 
@@ -25,12 +26,19 @@ public class HanjinHandler extends _TouristAgencyHandler {
 //		return super.scrapPrd(httpclient, website, options, insPrds);
 //	}
 
+	@Override
+	public ArrayList<Menu> scrapMenu(CloseableHttpClient httpclient, Website website) {
+		Html html = new Html(this.getHtml(httpclient, website));
+		ArrayList<Menu> menuList = getMenuUrlList(html.removeComment().getValueByClass("mainNavitopd").toString());
+		return null;
+	}
 	
-	
-	private ArrayList<String> getMenuUrlList(String htmlStr){
-		ArrayList<String> menuUrlList = new ArrayList<String>();
+	private ArrayList<Menu> getMenuUrlList(String htmlStr){
+		ArrayList<Menu> menuList = new ArrayList<Menu>();
 		Html html = new Html(htmlStr);
 		System.out.println(html);
-		return menuUrlList;
+		return menuList;
 	}
+
+	
 }

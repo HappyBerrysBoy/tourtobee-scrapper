@@ -44,9 +44,13 @@ public class ScrappingEngine {
 			while(rs.next()){
 				insPrds.add(rs.getString(1));
 			}
+
+			pstmt.close();
+			rs.close();
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		
 		return insPrds;
 	}
 	
@@ -118,6 +122,7 @@ public class ScrappingEngine {
 				mergePrdDtl(conn, prdDtl);
 			}
 			
+			pstmt.close();
 		}catch(Exception e){
 			log("insertPrd", e.toString());
 		}
@@ -206,6 +211,8 @@ public class ScrappingEngine {
 			pstmt.setString(23, prdDtl.getArrDtWd());
 			
 			pstmt.executeUpdate();
+			
+			pstmt.close();
 		}catch(Exception e){
 			log("getInsPrds", e.toString());
 		}
@@ -246,7 +253,7 @@ public class ScrappingEngine {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					if (website.getId().equals("Hanjin")) continue;
+					if (!website.getId().equals("Hanjin")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();
@@ -262,6 +269,7 @@ public class ScrappingEngine {
 					ArrayList<Menu> menuList = handler.scrapMenu(httpclient, website);
 					HashMap<String, Menu> prdUrls = new HashMap<String, Menu>();
 					
+					if (menuList == null) continue;
 					for (Menu menu : menuList){
 						for (String prdUrl : menu.getPrdUrls()){
 							prdUrls.put(prdUrl, menu);
@@ -294,6 +302,8 @@ public class ScrappingEngine {
 
 				}
 			}
+			
+			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

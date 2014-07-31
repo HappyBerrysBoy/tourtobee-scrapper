@@ -57,8 +57,6 @@ public class ScrappingEngine {
 	
 	public void insertPrd(Connection conn, Prd prd) {
 		
-		PreparedStatement pstmt;
-		
 		try{
 			String query = "merge into t_prd a using (select "
 									+ " ? tagn_id"
@@ -81,7 +79,7 @@ public class ScrappingEngine {
 									+ ", a.prd_url = b.prd_url "
 						+ "when not matched then insert (tagn_id, prd_no, prd_nm, tr_div, dmst_div, prd_desc, prd_desc_md, sel_dt, prd_url) "
 						+ "values ( b.tagn_id, b.prd_no, b.prd_nm, b.tr_div, b.dmst_div, b.prd_desc, b.prd_desc_md, sysdate, b.prd_url)";
-			pstmt = conn.prepareStatement(query);
+			PreparedStatement pstmt = conn.prepareStatement(query);
 			pstmt.setString(1, prd.getTagnId());
 			pstmt.setString(2, prd.getPrdNo());
 			pstmt.setString(3, prd.getPrdNm());
@@ -93,32 +91,38 @@ public class ScrappingEngine {
 			pstmt.executeUpdate();
 			pstmt.clearParameters();
 			pstmt.close();
+			pstmt = null;
+			
 			
 			int index = 0;
 			ArrayList<TtrTrArea> areaList = prd.getAreaList();
 			query = "delete from ttr_tr_area where tagn_id =? and prd_no = ?";
-			pstmt = conn.prepareStatement(query);
-			pstmt.setString(1, prd.getTagnId());
-			pstmt.setString(2, prd.getPrdNo());
-			pstmt.executeUpdate();
-			pstmt.clearParameters();
-			pstmt.close();
+			PreparedStatement deletePstmt = conn.prepareStatement(query);
+			deletePstmt.setString(1, prd.getTagnId());
+			deletePstmt.setString(2, prd.getPrdNo());
+			deletePstmt.executeUpdate();
+			deletePstmt.clearParameters();
+			deletePstmt.close();
+			deletePstmt = null;
+			
+			
 			
 			for (TtrTrArea area : areaList){
 				query = "insert into ttr_tr_area (tagn_id, prd_no, tr_area_seq, tr_cntt, tr_nt_cd, tr_city_cd, tr_site_cd) "
 						+ "values (?, ?, ?, ?, ?, ?, ?)";
 				
-				pstmt = conn.prepareStatement(query);
-				pstmt.setString(1, prd.getTagnId());
-				pstmt.setString(2, prd.getPrdNo());
-				pstmt.setString(3, String.valueOf(index));
-				pstmt.setString(4, area.getTrCntt());
-				pstmt.setString(5, area.getTrNtCd());
-				pstmt.setString(6, area.getTrCityCd());
-				pstmt.setString(7, area.getSiteCd());
-				pstmt.executeUpdate();
-				pstmt.clearParameters();
-				pstmt.close();
+				PreparedStatement areaPstmt = conn.prepareStatement(query);
+				areaPstmt.setString(1, prd.getTagnId());
+				areaPstmt.setString(2, prd.getPrdNo());
+				areaPstmt.setString(3, String.valueOf(index));
+				areaPstmt.setString(4, area.getTrCntt());
+				areaPstmt.setString(5, area.getTrNtCd());
+				areaPstmt.setString(6, area.getTrCityCd());
+				areaPstmt.setString(7, area.getSiteCd());
+				areaPstmt.executeUpdate();
+				areaPstmt.clearParameters();
+				areaPstmt.close();
+				areaPstmt = null;
 				
 				index++;
 			}
@@ -128,10 +132,8 @@ public class ScrappingEngine {
 				mergePrdDtl(conn, prdDtl);
 			}
 			
-			pstmt.clearParameters();
-			pstmt.close();
 		}catch(Exception e){
-			log("insertPrd", e.toString());
+			e.printStackTrace();
 		}
 	}
 	
@@ -221,7 +223,7 @@ public class ScrappingEngine {
 			pstmt.clearParameters();
 			pstmt.close();
 		}catch(Exception e){
-			log("getInsPrds", e.toString());
+			e.printStackTrace();
 		}
 	}
 	

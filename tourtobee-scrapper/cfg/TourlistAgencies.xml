@@ -6,4 +6,10 @@
 		<encoding>euc-kr</encoding>
 		<method>GET</method>
 	</site>
+	<site id="Hanjin" handler="hnc.tourtobee.scrapper.handler.website.HanjinHandler">
+		<name>한진관광</name>
+		<url>http://www.kaltour.com</url>
+		<encoding>utf-8</encoding>
+		<method>GET</method>
+	</site>
 </site-list>

@@ -1,5 +1,6 @@
 package hnc.tourtobee.scrapper.handler.website;
 
+import hnc.tourtobee.scrapper.dataobject.Menu;
 import hnc.tourtobee.scrapper.dataobject.Prd;
 import hnc.tourtobee.scrapper.dataobject.PrdDtl;
 import hnc.tourtobee.scrapper.dataobject.TtrTrArea;
@@ -20,7 +21,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jh.project.httpscrapper.Website;
-import jh.project.httpscrapper.handler.website._WebsiteHandler;
 import jh.project.httpscrapper.util.Html;
 
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -34,91 +34,104 @@ public class KRTHandler extends _TouristAgencyHandler{
 	
 	
 	@Override
-	public ArrayList<Prd> scrapPrd(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, HashSet<String> insPrds) {
-		ArrayList<Prd> prdList = new ArrayList<Prd>();
-		try {
+	public ArrayList<Menu> scrapMenu(CloseableHttpClient httpclient,
+			Website website) {
+		
+		ArrayList<Menu> menuList = new ArrayList<Menu>();
+		
+		try{
 			HashSet<String> prdUrls = new HashSet<String>();
 			HashMap<String, String> prdMenu = new HashMap<String, String>();
 			HashMap<String, String> prdD1Code = new HashMap<String, String>();
-			ArrayList<Menu> menuList = getMenuUrls(this.getHtml(httpclient, website));
+			ArrayList<JsonMenu> jsonMenuList = getMenuUrls(this.getHtml(httpclient, website));
 			
-			for (Menu menu : menuList){
-				String menuUrl = menu.mLink;
+			for (JsonMenu jsonMenu : jsonMenuList){
+				String menuUrl = jsonMenu.mLink;
 				Website subSite = new Website();
 				subSite.setUrl(menuUrl);
 				subSite.setMethod(website.getMethod());
 				subSite.setEncoding(website.getEncoding());
 				
-				log(website.getId() + " - Get Menu", menu.mMenu);
+				log(website.getId() + " - Get Menu", jsonMenu.mMenu);
 				
 				for (String prdUrl : getPrdUrls(this.getHtml(httpclient, subSite))){
 					prdUrls.add(prdUrl);
-					prdD1Code.put(prdUrl, menu.mD1code);
-					prdMenu.put(prdUrl, menu.mMenu);
+					prdD1Code.put(prdUrl, jsonMenu.mD1code);
+					prdMenu.put(prdUrl, jsonMenu.mMenu);
 				}
+				
+				Menu menu = new Menu();
+				menu.setMenuName(jsonMenu.mMenu);
+				menu.setMenuCode(jsonMenu.mD1code);
+				menu.setPrdUrls(prdUrls);
+				
+				menuList.add(menu);
+			}
+		}catch(Exception e){
+			log("scrapMenu", e.toString());
+		}
+		
+		return menuList;
+	}
+
+
+	@Override
+	public Prd scrapPrd(CloseableHttpClient httpclient, Website website, Menu menu, String prdUrl, HashMap<String, String> options, HashSet<String> insPrds){
+		Prd prd = new Prd();
+		try {
+			
+			String prdNo = prdUrl.split("good_cd")[1].split("&")[0].replace("=", "");
+			
+			if (insPrds!= null && insPrds.contains("prdNo")) return null;
+				
+			Website prdSite = new Website();
+			prdSite.setUrl("http://www.krt.co.kr" + prdUrl);
+			prdSite.setMethod(website.getMethod());
+			prdSite.setEncoding(website.getEncoding());
+			String prdHtml = this.removeComment(this.getHtml(httpclient, prdSite));
+			
+			prd.setTagnId(website.getId());
+			prd.setPrdNo(prdNo);
+			prd.setPrdUrl(prdSite.getUrl());
+			prd.setPrdNm(this.removeAllTags(this.getValueByClass(prdHtml, "tit_text")));
+			
+			if (menu.getMenuCode().equals("G3")){
+				prd.setTrDiv(PRD_CLASS.get("허니문"));
+				prd.setDmstDiv("A");
+			}else if (menu.getMenuCode().equals("G5")){
+				prd.setTrDiv(PRD_CLASS.get("국내"));
+				prd.setDmstDiv("D");
+			}else if (menu.getMenuCode().equals("G7")){
+				prd.setTrDiv(PRD_CLASS.get("골프"));
+				prd.setDmstDiv("A");
+			}else {
+				prd.setTrDiv(PRD_CLASS.get("패키지"));
+				prd.setDmstDiv("A");
 			}
 			
-			int prdCnt = 0;
-			for(String prdUrl : prdUrls){
-				prdCnt++;
-				Prd prd = new Prd();
-				
-				String prdNo = prdUrl.split("good_cd")[1].split("&")[0].replace("=", "");
-				
-				if ((insPrds != null && insPrds.contains(prdNo))) continue; 
-				
-				Website prdSite = new Website();
-				prdSite.setUrl("http://www.krt.co.kr" + prdUrl);
-				prdSite.setMethod(website.getMethod());
-				prdSite.setEncoding(website.getEncoding());
-				String prdHtml = this.removeComment(this.getHtml(httpclient, prdSite));
-				
-				prd.setTagnId("KRT");
-				prd.setPrdNo(prdNo);
-				prd.setPrdUrl(prdSite.getUrl());
-				prd.setPrdNm(this.removeAllTags(this.getValueByClass(prdHtml, "tit_text")));
-				
-				if (prdD1Code.get(prdUrl).equals("G3")){
-					prd.setTrDiv(PRD_CLASS.get("허니문"));
-					prd.setDmstDiv("A");
-				}else if (prdD1Code.get(prdUrl).equals("G5")){
-					prd.setTrDiv(PRD_CLASS.get("국내"));
-					prd.setDmstDiv("D");
-				}else if (prdD1Code.get(prdUrl).equals("G7")){
-					prd.setTrDiv(PRD_CLASS.get("골프"));
-					prd.setDmstDiv("A");
-				}else {
-					prd.setTrDiv(PRD_CLASS.get("패키지"));
-					prd.setDmstDiv("A");
-				}
-				
-				ArrayList<String> areaCodeList = findGetAreaString(prd.getPrdNm());
-				if (areaCodeList.size() <= 0) areaCodeList = findGetAreaString(prdMenu.get(prdUrl));
-				ArrayList<TtrTrArea> areaList = new ArrayList<TtrTrArea>();
-				for (String areaCode :  areaCodeList){
-					TtrTrArea area = new TtrTrArea();
-					String[] areaCodeSplit = areaCode.split("/");
-					area.setTrCityCd(areaCodeSplit[0]);
-					area.setTrNtCd(areaCodeSplit[1]);
-					area.setTrCntt(areaCodeSplit[2]);
-					areaList.add(area);
-				}
-				prd.setAreaList(areaList);
-				
-				prdList.add(prd);
-				log(website.getId() + " - Prd(" + prd.getPrdNo() + ")", String.valueOf(prdCnt) + "/" + String.valueOf(prdUrls.size()));
+			ArrayList<String> areaCodeList = findGetAreaString(prd.getPrdNm());
+			if (areaCodeList.size() <= 0) areaCodeList = findGetAreaString(menu.getMenuName());
+			ArrayList<TtrTrArea> areaList = new ArrayList<TtrTrArea>();
+			for (String areaCode :  areaCodeList){
+				TtrTrArea area = new TtrTrArea();
+				String[] areaCodeSplit = areaCode.split("/");
+				area.setTrCityCd(areaCodeSplit[0]);
+				area.setTrNtCd(areaCodeSplit[1]);
+				area.setTrCntt(areaCodeSplit[2]);
+				areaList.add(area);
 			}
+			prd.setAreaList(areaList);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
-		return prdList;
+		return prd;
 	}
 	
 
 	@Override
-	public ArrayList<PrdDtl> scrapPrdDtlSmmry(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, String prdUrl, String prdNo) {
+	public ArrayList<PrdDtl> scrapPrdDtlSmmry(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, Prd prd) {
 		
 		HashSet<String> monthSet = new HashSet<String>();
 		if (options != null){
@@ -133,83 +146,87 @@ public class KRTHandler extends _TouristAgencyHandler{
 		}
 		
 		ArrayList<PrdDtl> prdDtlList = new ArrayList<PrdDtl>();
-		for (String month : monthSet){
-			String prtType = prdUrl.split("/")[prdUrl.split("/").length - 1].split("_")[0];
-
-			String prdDtlListUrl = "http://www.krt.co.kr/_inc2014/_StartList.asp?"
-							+ "param1=" + prdNo
-							+ "&param2=" + month
-							+ "&param3=" + getSystemMonth()
-							+ "&param4=" + prtType
-							+ "&param5=0"
-							+ "&param6=" + getSystemMonth();
-			Website prdDtlListSite = new Website();
-			prdDtlListSite.setUrl(prdDtlListUrl);
-			prdDtlListSite.setMethod("GET");
-			prdDtlListSite.setEncoding(website.getEncoding());
-			
-			Html prdDtlListHtml = new Html(this.getHtml(httpclient, prdDtlListSite));
-			prdDtlListHtml = prdDtlListHtml.getTag("div").getTag("table");
-			
-			while (true){
-				prdDtlListHtml = new Html(prdDtlListHtml.toString().substring(1));
-				String subHtmlStr = prdDtlListHtml.getTag("table").toString();
+		try{
+			for (String month : monthSet){
+				String prtType = prd.getPrdUrl().split("/")[prd.getPrdUrl().split("/").length - 1].split("_")[0];
+	
+				String prdDtlListUrl = "http://www.krt.co.kr/_inc2014/_StartList.asp?"
+								+ "param1=" + prd.getPrdNo()
+								+ "&param2=" + month
+								+ "&param3=" + getSystemMonth()
+								+ "&param4=" + prtType
+								+ "&param5=0"
+								+ "&param6=" + getSystemMonth();
+				Website prdDtlListSite = new Website();
+				prdDtlListSite.setUrl(prdDtlListUrl);
+				prdDtlListSite.setMethod("GET");
+				prdDtlListSite.setEncoding(website.getEncoding());
 				
-				if (subHtmlStr.trim().length() <= 0) break;
+				Html prdDtlListHtml = new Html(this.getHtml(httpclient, prdDtlListSite));
+				prdDtlListHtml = prdDtlListHtml.getTag("div").getTag("table");
 				
-				Html subHtml = new Html(subHtmlStr);
-				String depDt = subHtml.getTag("TD").removeAllTags().convertSpecialChar().toString();
-				String wkDay =  depDt.split("\\(")[1].substring(0, 1);
-				depDt = month.substring(0, 4) + depDt.split("\\(")[0].replace("/", "").trim();
-				
-				String feeAd = subHtml.removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString();
-				feeAd = feeAd.replace(",", "").trim();
-				String seq = subHtml.removeTag("TD").removeTag("TD").getTag("TD").toString();
-				String seqArr[] = seq.split("((?i)href)=[\"\']")[1].split("((?i)catNum)=")[1].split("_");
-				seq = seqArr[4] + "_" + seqArr[5];
-				String name = subHtml.removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
-				String airLine = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().toString();
-				airLine = airLine.split("alt=[\"\']")[1];
-				airLine = airLine.split("\\.")[0];
-				String depTm = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString();
-				depTm = depTm.replaceAll("[\\(|\\)|:]*", "").trim();
-				String prdSt = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
-				if (prdSt.equals("예약마감")){
-					prdSt = "예약마감";
-				}else if (prdSt.equals("예약대기")){
-					prdSt = "대기예약";
-				}else if (prdSt.equals("예약가능")){
-					prdSt = "예약가능";
-				}else if (prdSt.equals("출발예정")){
-					prdSt = "예약가능";
-				}else if (prdSt.equals("출발확정")){
-					prdSt = "출발확정";
-				}else if (prdSt.equals("마감임박")){
-					prdSt = "예약가능";
-				}else{
-					prdSt = "예약가능";
+				while (true){
+					prdDtlListHtml = new Html(prdDtlListHtml.toString().substring(1));
+					String subHtmlStr = prdDtlListHtml.getTag("table").toString();
+					
+					if (subHtmlStr.trim().length() <= 0) break;
+					
+					Html subHtml = new Html(subHtmlStr);
+					String depDt = subHtml.getTag("TD").removeAllTags().convertSpecialChar().toString();
+					String wkDay =  depDt.split("\\(")[1].substring(0, 1);
+					depDt = month.substring(0, 4) + depDt.split("\\(")[0].replace("/", "").trim();
+					
+					String feeAd = subHtml.removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString();
+					feeAd = feeAd.replace(",", "").trim();
+					String seq = subHtml.removeTag("TD").removeTag("TD").getTag("TD").toString();
+					String seqArr[] = seq.split("((?i)href)=[\"\']")[1].split("((?i)catNum)=")[1].split("_");
+					seq = seqArr[4] + "_" + seqArr[5];
+					String name = subHtml.removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
+					String airLine = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").toString();
+					airLine = airLine.split("alt=[\"\']")[1];
+					airLine = airLine.split("[\"\']")[0];
+					String depTm = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString();
+					depTm = depTm.replaceAll("[\\(|\\)|:]*", "").trim();
+					String prdSt = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
+					if (prdSt.equals("예약마감")){
+						prdSt = "예약마감";
+					}else if (prdSt.equals("예약대기")){
+						prdSt = "대기예약";
+					}else if (prdSt.equals("예약가능")){
+						prdSt = "예약가능";
+					}else if (prdSt.equals("출발예정")){
+						prdSt = "예약가능";
+					}else if (prdSt.equals("출발확정")){
+						prdSt = "출발확정";
+					}else if (prdSt.equals("마감임박")){
+						prdSt = "예약가능";
+					}else{
+						prdSt = "예약가능";
+					}
+					
+					prdDtlListHtml = prdDtlListHtml.removeTag("tr");
+					
+	//				System.out.println(depDt + "/" + wkDay + "/" + feeAd + "/" + seq + "/" + name + "/" + depTm + "/" + prdSt);
+	//				System.out.println("==================================");
+					PrdDtl prdDtl = new PrdDtl();
+					prdDtl.setTagnId(prd.getTagnId());
+					prdDtl.setPrdNo(prd.getPrdNo());
+					prdDtl.setPrdSeq(seq);
+					prdDtl.setDepDt(depDt + depTm);
+					prdDtl.setDepDtYmd(depDt);
+					prdDtl.setDepDtHm(depTm);
+					prdDtl.setDepDtWd(WEEK_DAY_NUMBER.get(wkDay));
+					prdDtl.setPrdDtlNm(name);
+					prdDtl.setArlnId(airLine);
+					prdDtl.setPrdFeeAd(feeAd);
+					prdDtl.setPrdSt(PRD_STATUS.get(prdSt));
+					
+					prdDtlList.add(prdDtl);
 				}
-				
-				prdDtlListHtml = prdDtlListHtml.removeTag("tr");
-				
-//				System.out.println(depDt + "/" + wkDay + "/" + feeAd + "/" + seq + "/" + name + "/" + depTm + "/" + prdSt);
-//				System.out.println("==================================");
-				PrdDtl prdDtl = new PrdDtl();
-				prdDtl.setPrdNo(prdNo);
-				prdDtl.setPrdSeq(seq);
-				prdDtl.setDepDt(depDt + depTm);
-				prdDtl.setDepDtYmd(depDt);
-				prdDtl.setDepDtHm(depTm);
-				prdDtl.setDepDtWd(WEEK_DAY_NUMBER.get(wkDay));
-				prdDtl.setPrdDtlNm(name);
-				prdDtl.setArlnId(airLine);
-				prdDtl.setPrdFeeAd(feeAd);
-				prdDtl.setPrdSt(prdSt);
-				
-				prdDtlList.add(prdDtl);
 			}
+		}catch(Exception e){
+			log("scrapPrdDtlSmmry", e.toString());
 		}
-		
 		return prdDtlList;
 	}
 
@@ -219,14 +236,17 @@ public class KRTHandler extends _TouristAgencyHandler{
 
 	@Override
 	public ArrayList getResult(CloseableHttpClient httpclient, Website website, HashMap<String, String> options) {
-		ArrayList<Prd> prdList = scrapPrd(httpclient, website, options, null);
-		ArrayList<Prd> nPrdList = new ArrayList<Prd>(); 
+		ArrayList<Menu> menuList = scrapMenu(httpclient, website);
+		ArrayList<Prd> prdList = new ArrayList<Prd>();
 		
-		for (Prd prd : prdList){
-			ArrayList<PrdDtl> prdDtlSmmry = scrapPrdDtlSmmry(httpclient, website, options, prd.getPrdUrl(), prd.getPrdNo());
-			
-			prd.setPrdDtlLst(prdDtlSmmry);
-			nPrdList.add(prd);
+		for (Menu menu : menuList){
+			for (String prdUrl : menu.getPrdUrls()){
+				Prd prd = scrapPrd(httpclient, website, menu, prdUrl, options, null);
+				ArrayList<PrdDtl> prdDtlSmmry = scrapPrdDtlSmmry(httpclient, website, options, prd);
+				
+				prd.setPrdDtlLst(prdDtlSmmry);
+				prdList.add(prd);
+			}
 		}
 		
 		return prdList;
@@ -342,16 +362,16 @@ public class KRTHandler extends _TouristAgencyHandler{
 	 * @return url 이 담겨있는 ArrayList
 	 * @throws IOException
 	 */
-	private ArrayList<Menu> getMenuUrls(String html) throws IOException{
+	private ArrayList<JsonMenu> getMenuUrls(String html) throws IOException{
 		ArrayList<String> urls = new ArrayList<String>();
-		ArrayList<Menu> menuList = new ArrayList<KRTHandler.Menu>();
+		ArrayList<JsonMenu> menuList = new ArrayList<KRTHandler.JsonMenu>();
 		
 		String[] htmlLine = html.split("\n");
 		
 		for	(String line: htmlLine){
 			if (line.length() < 14 || !line.substring(0, 14).equals("menuArray.push")) continue;
 			Gson gson = new GsonBuilder().create();
-			Menu m = gson.fromJson(line.trim().replace("menuArray.push(", "").replace(");", ""), Menu.class);
+			JsonMenu m = gson.fromJson(line.trim().replace("menuArray.push(", "").replace(");", ""), JsonMenu.class);
 			menuList.add(m);
 		}
 		
@@ -359,7 +379,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 		while(true){
 			if (i > menuList.size() - 1) break;
 			
-			Menu menu = menuList.get(i);
+			JsonMenu menu = menuList.get(i);
 			
 			if (!menu.mD1code.substring(0, 1).equals("G")){
 				menuList.remove(i);
@@ -395,7 +415,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 			
 			boolean increaseI = true;
 			for(int j = i + 1; j <= menuList.size() - 1 ; j++){
-				Menu compareMenu = menuList.get(j);
+				JsonMenu compareMenu = menuList.get(j);
 				if (menu.mD1code.equals(compareMenu.mD1code) 
 						&& menu.mD2code.equals(compareMenu.mD2code) 
 						&& menu.mD3code.equals(compareMenu.mD3code) 
@@ -429,7 +449,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 			}
 		}
 		
-		for(Menu menu : menuList){
+		for(JsonMenu menu : menuList){
 			urls.add(menu.mLink);
 		}
 //		return urls;
@@ -464,7 +484,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 	
 	
 	
-	private class Menu{
+	private class JsonMenu{
 		private String mGubun;
 		private String mGtype;
 		private String mDepth;

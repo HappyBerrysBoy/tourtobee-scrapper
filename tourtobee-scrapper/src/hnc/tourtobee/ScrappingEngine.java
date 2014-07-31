@@ -2,6 +2,7 @@ package hnc.tourtobee;
 
 import static hnc.tourtobee.util.Util.log;
 import static hnc.tourtobee.code.Codes.initCodes;
+import hnc.tourtobee.scrapper.dataobject.Menu;
 import hnc.tourtobee.scrapper.dataobject.Prd;
 import hnc.tourtobee.scrapper.dataobject.PrdDtl;
 import hnc.tourtobee.scrapper.dataobject.TtrTrArea;
@@ -50,80 +51,76 @@ public class ScrappingEngine {
 	}
 	
 	
-	public void insertPrd(Connection conn, ArrayList<Prd> prdList) {
-		for(Prd prd : prdList){
-			PreparedStatement pstmt;
+	public void insertPrd(Connection conn, Prd prd) {
+		
+		PreparedStatement pstmt;
+		
+		try{
+			String query = "merge into t_prd a using (select "
+									+ " ? tagn_id"
+									+ ", ? prd_no"
+									+ ", ? prd_nm"
+									+ ", ? tr_div"
+									+ ", ? dmst_div"
+									+ ", ? prd_desc"
+									+ ", ? prd_desc_md"
+									+ ", ? prd_url"
+									+ " from dual) b "
+						+ "on (a.tagn_id = b.tagn_id and a.prd_no = b.prd_no) "
+						+ "when matched then update set "
+									+ "a.prd_nm= b.prd_nm"
+									+ ", a.tr_div= b.tr_div"
+									+ ", a.dmst_div= b.dmst_div"
+									+ ", a.prd_desc= b.prd_desc"
+									+ ", a.prd_desc_md= b.prd_desc_md"
+									+ ", a.sel_dt = sysdate"
+									+ ", a.prd_url = b.prd_url "
+						+ "when not matched then insert (tagn_id, prd_no, prd_nm, tr_div, dmst_div, prd_desc, prd_desc_md, sel_dt, prd_url) "
+						+ "values ( b.tagn_id, b.prd_no, b.prd_nm, b.tr_div, b.dmst_div, b.prd_desc, b.prd_desc_md, sysdate, b.prd_url)";
+			pstmt = conn.prepareStatement(query);
+			pstmt.setString(1, prd.getTagnId());
+			pstmt.setString(2, prd.getPrdNo());
+			pstmt.setString(3, prd.getPrdNm());
+			pstmt.setString(4, prd.getTrDiv());
+			pstmt.setString(5, prd.getDmstDiv());
+			pstmt.setString(6, prd.getPrdDesc());
+			pstmt.setString(7, prd.getPrdDescMd());
+			pstmt.setString(8, prd.getPrdUrl());
+			pstmt.executeUpdate();
 			
-			try{
-				String query = "merge into t_prd a using (select "
-										+ " ? tagn_id"
-										+ ", ? prd_no"
-										+ ", ? prd_nm"
-										+ ", ? tr_div"
-										+ ", ? dmst_div"
-										+ ", ? prd_desc"
-										+ ", ? prd_desc_md"
-										+ ", ? prd_url"
-										+ " from dual) b "
-							+ "on (a.tagn_id = b.tagn_id and a.prd_no = b.prd_no) "
-							+ "when matched then update set "
-										+ "a.prd_nm= b.prd_nm"
-										+ ", a.tr_div= b.tr_div"
-										+ ", a.dmst_div= b.dmst_div"
-										+ ", a.prd_desc= b.prd_desc"
-										+ ", a.prd_desc_md= b.prd_desc_md"
-										+ ", a.sel_dt = sysdate"
-										+ ", a.prd_url = b.prd_url "
-							+ "when not matched then insert (tagn_id, prd_no, prd_nm, tr_div, dmst_div, prd_desc, prd_desc_md, sel_dt, prd_url) "
-							+ "values ( b.tagn_id, b.prd_no, b.prd_nm, b.tr_div, b.dmst_div, b.prd_desc, b.prd_desc_md, sysdate, b.prd_url)";
+			int index = 0;
+			ArrayList<TtrTrArea> areaList = prd.getAreaList();
+			query = "delete from ttr_tr_area where tagn_id =? and prd_no = ?";
+			pstmt = conn.prepareStatement(query);
+			pstmt.setString(1, prd.getTagnId());
+			pstmt.setString(2, prd.getPrdNo());
+			pstmt.executeUpdate();
+			
+			for (TtrTrArea area : areaList){
+				query = "insert into ttr_tr_area (tagn_id, prd_no, tr_area_seq, tr_cntt, tr_nt_cd, tr_city_cd, tr_site_cd) "
+						+ "values (?, ?, ?, ?, ?, ?, ?)";
+				
 				pstmt = conn.prepareStatement(query);
 				pstmt.setString(1, prd.getTagnId());
 				pstmt.setString(2, prd.getPrdNo());
-				pstmt.setString(3, prd.getPrdNm());
-				pstmt.setString(4, prd.getTrDiv());
-				pstmt.setString(5, prd.getDmstDiv());
-				pstmt.setString(6, prd.getPrdDesc());
-				pstmt.setString(7, prd.getPrdDescMd());
-				pstmt.setString(8, prd.getPrdUrl());
+				pstmt.setString(3, String.valueOf(index));
+				pstmt.setString(4, area.getTrCntt());
+				pstmt.setString(5, area.getTrNtCd());
+				pstmt.setString(6, area.getTrCityCd());
+				pstmt.setString(7, area.getSiteCd());
 				pstmt.executeUpdate();
 				
-				int index = 0;
-				ArrayList<TtrTrArea> areaList = prd.getAreaList();
-				query = "delete from ttr_tr_area where tagn_id =? and prd_no = ?";
-				pstmt = conn.prepareStatement(query);
-				pstmt.setString(1, prd.getTagnId());
-				pstmt.setString(2, prd.getPrdNo());
-				pstmt.executeUpdate();
-				
-				for (TtrTrArea area : areaList){
-					query = "insert into ttr_tr_area (tagn_id, prd_no, tr_area_seq, tr_cntt, tr_nt_cd, tr_city_cd, tr_site_cd) "
-							+ "values (?, ?, ?, ?, ?, ?, ?)";
-					
-					pstmt = conn.prepareStatement(query);
-					pstmt.setString(1, prd.getTagnId());
-					pstmt.setString(2, prd.getPrdNo());
-					pstmt.setString(3, String.valueOf(index));
-					pstmt.setString(4, area.getTrCntt());
-					pstmt.setString(5, area.getTrNtCd());
-					pstmt.setString(6, area.getTrCityCd());
-					pstmt.setString(7, area.getSiteCd());
-					pstmt.executeUpdate();
-					
-					index++;
-				}
+				index++;
+			}
 
-				ArrayList<PrdDtl> prdDtlList = prd.getPrdDtlLst();
-				for(PrdDtl prdDtl : prdDtlList){
-					mergePrdDtl(conn, prdDtl);
-				}
-				
-			}catch(Exception e){
-				System.out.println(e);
+			ArrayList<PrdDtl> prdDtlList = prd.getPrdDtlLst();
+			for(PrdDtl prdDtl : prdDtlList){
+				mergePrdDtl(conn, prdDtl);
 			}
 			
-			
+		}catch(Exception e){
+			log("insertPrd", e.toString());
 		}
-		
 	}
 	
 	
@@ -210,7 +207,7 @@ public class ScrappingEngine {
 			
 			pstmt.executeUpdate();
 		}catch(Exception e){
-			e.printStackTrace();
+			log("getInsPrds", e.toString());
 		}
 	}
 	
@@ -249,48 +246,51 @@ public class ScrappingEngine {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
+					if (website.getId().equals("Hanjin")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();
 					tempC.add(Calendar.MONTH, scrapMonth);
 					String toMonth = String.format("%04d", tempC.get(Calendar.YEAR)) + String.format("%02d", tempC.get(Calendar.MONTH) + 1);
-					HashMap<String, String> option = new HashMap<String, String>();
-					option.put("until", toMonth);
-//					option.put("month", "201408");
+					HashMap<String, String> options = new HashMap<String, String>();
+					options.put("until", toMonth);
 					
 					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 					CloseableHttpClient httpclient = HttpClients.createDefault();
 					
-					log(website.getId(), "INSERT PRD Start!!");
 					HashSet<String> insPrds = se.getInsPrds(conn, website.getId());
-					ArrayList<Prd> prdList = handler.scrapPrd(httpclient, website, option, insPrds);
-					se.insertPrd(conn, prdList);
-					log(website.getId(), "INSERT PRD End!!");
+					ArrayList<Menu> menuList = handler.scrapMenu(httpclient, website);
+					HashMap<String, Menu> prdUrls = new HashMap<String, Menu>();
 					
-					log(website.getId(), "INSERT PRD_DTL Start!!");
-					int prdIndex = 0;
-					for (Prd prd : prdList){
-						prdIndex++;
-						log("\t", String.valueOf(prdIndex) + " / " + String.valueOf(prdList.size()));
-						ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, option, prd.getPrdUrl(), prd.getPrdNo());
+					for (Menu menu : menuList){
+						for (String prdUrl : menu.getPrdUrls()){
+							prdUrls.put(prdUrl, menu);
+						}
+					}
+					
+					int prdCnt = 0;
+					for (String prdUrl : prdUrls.keySet()){
+						Prd prd = handler.scrapPrd(httpclient, website, prdUrls.get(prdUrl), prdUrl, options, insPrds);
+						if (prd == null) continue;
+						log(website.getId() + " Scrap Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
 						
+						se.insertPrd(conn, prd);
+						
+						log(website.getId() + " Insert Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
+						
+						prdCnt++;
+					}
+					
+					ArrayList<Prd> prdList = new ArrayList<Prd>();
+					for (Prd prd : prdList){
+						log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+						ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
+						log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
 						for (PrdDtl prdDtl : prdDtlList){
 							se.mergePrdDtl(conn, prdDtl);
 						}
 					}
-					log(website.getId(), "INSERT PRD_DTL End!!");
-					
-					
-					
-					
 
-//					ScrapResult sresult = sc.websiteScrap(website, option);
-//					
-//					log(website.getId(), "Scrap Finish");
-//					
-//					se.insertPrd(conn, sresult);
-//
-//					log(website.getId(), "DB Insert Finish");
 
 				}
 			}

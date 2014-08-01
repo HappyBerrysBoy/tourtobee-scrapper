@@ -162,7 +162,6 @@ public class KRTHandler extends _TouristAgencyHandler{
 					prdDtl.setPrdFeeAd(feeAd);
 					prdDtl.setPrdSt(PRD_STATUS.get(prdSt));
 					
-					System.out.println(url);
 					prdDtlList.add(prdDtl);
 				}
 				

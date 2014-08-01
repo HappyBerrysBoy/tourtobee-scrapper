@@ -269,7 +269,7 @@ public class ScrappingEngine {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					if (website.getId().equals("Hanjin")) continue;
+					if (!website.getId().equals("Hanjin")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();
@@ -287,9 +287,9 @@ public class ScrappingEngine {
 						insPrdNoSet.add(prd.getPrdNo());
 					}
 					
-					/*
-					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, insPrdNoSet);
 					
+					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, insPrdNoSet);
+					/*
 					int prdCnt = 0;
 					if (prdList != null && prdList.size() > 0){
 						for (Prd prd : prdList){
@@ -300,10 +300,11 @@ public class ScrappingEngine {
 							prdCnt++;
 						}
 					}
+					
 					*/
 					
-					if (insPrds != null && insPrds.size() > 0){
-						for (Prd prd : insPrds){
+					if (prdList != null && prdList.size() > 0){
+						for (Prd prd : prdList){
 							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
 							ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
 							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");

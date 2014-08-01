@@ -70,17 +70,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 	@Override
 	public ArrayList<PrdDtl> scrapPrdDtlSmmry(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, Prd prd) {
 		
-		HashSet<String> monthSet = new HashSet<String>();
-		if (options != null){
-			if (options.get("until") != null){
-				monthSet = Util.getYearMonthSet(options.get("until"));
-			}
-			if (options.get("month") != null){
-				monthSet.add(options.get("month"));
-			}
-		}else{
-			monthSet.add(getSystemMonth());
-		}
+		HashSet<String> monthSet = this.getMonthSet(options);
 		
 		ArrayList<PrdDtl> prdDtlList = new ArrayList<PrdDtl>();
 		try{
@@ -269,18 +259,18 @@ private ArrayList<Menu> scrapMenu(CloseableHttpClient httpclient, Website websit
 				prd.setDmstDiv("A");
 			}
 			
-			ArrayList<String> areaCodeList = findGetAreaString(prd.getPrdNm());
-			if (areaCodeList.size() <= 0) areaCodeList = findGetAreaString(menu.getMenuName());
-			ArrayList<TtrTrArea> areaList = new ArrayList<TtrTrArea>();
-			for (String areaCode :  areaCodeList){
-				TtrTrArea area = new TtrTrArea();
-				String[] areaCodeSplit = areaCode.split("/");
-				area.setTrCityCd(areaCodeSplit[0]);
-				area.setTrNtCd(areaCodeSplit[1]);
-				area.setTrCntt(areaCodeSplit[2]);
-				areaList.add(area);
-			}
-			prd.setAreaList(areaList);
+//			ArrayList<String> areaCodeList = findGetAreaString(prd.getPrdNm());
+//			if (areaCodeList.size() <= 0) areaCodeList = findGetAreaString(menu.getMenuName());
+//			ArrayList<TtrTrArea> areaList = new ArrayList<TtrTrArea>();
+//			for (String areaCode :  areaCodeList){
+//				TtrTrArea area = new TtrTrArea();
+//				String[] areaCodeSplit = areaCode.split("/");
+//				area.setTrCityCd(areaCodeSplit[0]);
+//				area.setTrNtCd(areaCodeSplit[1]);
+//				area.setTrCntt(areaCodeSplit[2]);
+//				areaList.add(area);
+//			}
+			prd.setAreaList(this.getAreaList(prd.getPrdNm(), menu.getMenuName()));
 			
 		} catch (Exception e) {
 			e.printStackTrace();

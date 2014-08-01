@@ -1,8 +1,12 @@
 package hnc.tourtobee.scrapper.handler.website;
 
+import static hnc.tourtobee.code.Codes.findGetAreaString;
+import static hnc.tourtobee.util.Util.getSystemMonth;
 import hnc.tourtobee.scrapper.dataobject.Menu;
 import hnc.tourtobee.scrapper.dataobject.Prd;
 import hnc.tourtobee.scrapper.dataobject.PrdDtl;
+import hnc.tourtobee.scrapper.dataobject.TtrTrArea;
+import hnc.tourtobee.util.Util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,30 +22,6 @@ public class _TouristAgencyHandler extends _WebsiteHandler {
 	public _TouristAgencyHandler() {
 		super();
 	}
-	
-	/**
-	 * 메뉴와 해당 메뉴에 포함된 상품의 url 정보를 스크래핑 한다.
-	 * @param httpclient
-	 * @param website
-	 * @return
-	 */
-//	public ArrayList<Menu> scrapMenu(CloseableHttpClient httpclient, Website website){
-//		return null;
-//	}
-	
-	/**
-	 * 상품 정보를 스크랩 한다.
-	 * @param httpclient
-	 * @param website
-	 * @param menu
-	 * @param prdUrl 상품 정보 URL
-	 * @param options until, month 둘 중 하나의 옵션을 가진다.
-	 * @param insPrds 이미 입력된 상품 NO
-	 * @return 상품 정보
-	 */
-//	public Prd scrapPrd(CloseableHttpClient httpclient, Website website, Menu menu, String prdUrl, HashMap<String, String> options, HashSet<String> insPrds){
-//		return null;
-//	}
 	
 	
 	/**
@@ -83,6 +63,50 @@ public class _TouristAgencyHandler extends _WebsiteHandler {
 	 */
 	public ArrayList<PrdDtl> scrapPrdDtlSmmry(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, Prd prd){
 		return null;
+	}
+	
+	/**
+	 * hint의 내용으로 여행 지역 을 찾아낸다
+	 * @param hint1
+	 * @param hint2
+	 * @return 여행 지역 목록
+	 */
+	public ArrayList<TtrTrArea> getAreaList(String hint1, String hint2){
+		ArrayList<String> areaCodeList = findGetAreaString(hint1);
+		if (areaCodeList.size() <= 0) areaCodeList = findGetAreaString(hint2);
+		ArrayList<TtrTrArea> areaList = new ArrayList<TtrTrArea>();
+		for (String areaCode :  areaCodeList){
+			TtrTrArea area = new TtrTrArea();
+			String[] areaCodeSplit = areaCode.split("/");
+			area.setTrCityCd(areaCodeSplit[0]);
+			area.setTrNtCd(areaCodeSplit[1]);
+			area.setTrCntt(areaCodeSplit[2]);
+			areaList.add(area);
+		}
+		
+		return areaList;
+	}
+	
+	
+	
+	/**
+	 * 조회할 월 (yyyymm)Set 을 가져온다.
+	 * @param options
+	 * @return 조회할 월 (yyyymm)Set 
+	 */
+	public HashSet<String> getMonthSet(HashMap<String, String> options){
+		HashSet<String> monthSet = new HashSet<String>();
+		if (options != null){
+			if (options.get("until") != null){
+				monthSet = Util.getYearMonthSet(options.get("until"));
+			}
+			if (options.get("month") != null){
+				monthSet.add(options.get("month"));
+			}
+		}else{
+			monthSet.add(getSystemMonth());
+		}
+		return monthSet;
 	}
 	
 	

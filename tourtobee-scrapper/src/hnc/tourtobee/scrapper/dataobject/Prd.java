@@ -27,6 +27,7 @@ public class Prd extends _DataObject{
 	private String prdDesc = "";
 	private String prdDescMd = "";
 	private String prdUrl = "";
+	private String depArpt = "";
 	
 	
 	public Prd() {
@@ -120,6 +121,12 @@ public class Prd extends _DataObject{
 	}
 	public void setPrdUrl(String prdUrl) {
 		this.prdUrl = prdUrl;
+	}
+	public String getDepArpt() {
+		return depArpt;
+	}
+	public void setDepArpt(String depArpt) {
+		this.depArpt = depArpt;
 	}
 	
 }

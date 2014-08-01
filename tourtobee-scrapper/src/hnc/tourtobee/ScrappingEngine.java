@@ -31,10 +31,10 @@ import oracle.jdbc.pool.OracleDataSource;
 
 public class ScrappingEngine {
 	
-	public HashSet<String> getInsPrds(Connection conn, String tagnId){
-		HashSet<String> insPrds = new HashSet<String>();
+	public ArrayList<Prd> getInsPrds(Connection conn, String tagnId){
+		ArrayList<Prd> insPrds = new ArrayList<Prd>();
 		try{
-			String query = "SELECT PRD_NO"
+			String query = "SELECT TAGN_ID, PRD_NO, PRD_NM, TR_DIV, DMST_DIV, PRD_URL"
 						+ " FROM T_PRD"
 						+ " WHERE TAGN_ID = ?";
 			PreparedStatement pstmt = conn.prepareStatement(query);
@@ -42,7 +42,14 @@ public class ScrappingEngine {
 			ResultSet rs = pstmt.executeQuery();
 			
 			while(rs.next()){
-				insPrds.add(rs.getString(1));
+				Prd prd = new Prd();
+				prd.setTagnId(rs.getString("TAGN_ID"));
+				prd.setPrdNo(rs.getString("PRD_NO"));
+				prd.setPrdNm(rs.getString("PRD_NM"));
+				prd.setTrDiv(rs.getString("TR_DIV"));
+				prd.setDmstDiv(rs.getString("DMST_DIV"));
+				prd.setPrdUrl(rs.getString("PRD_URL"));
+				insPrds.add(prd);
 			}
 
 			pstmt.close();
@@ -262,7 +269,7 @@ public class ScrappingEngine {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					if (!website.getId().equals("Hanjin")) continue;
+					if (website.getId().equals("Hanjin")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();
@@ -274,17 +281,23 @@ public class ScrappingEngine {
 					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 					CloseableHttpClient httpclient = HttpClients.createDefault();
 					
-					HashSet<String> insPrds = se.getInsPrds(conn, website.getId());
-					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, insPrds);
+					ArrayList<Prd> insPrds = se.getInsPrds(conn, website.getId());
+					HashSet<String> insPrdNoSet = new HashSet<String>();
+					for (Prd prd : insPrds){
+						insPrdNoSet.add(prd.getPrdNo());
+					}
+					
+					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, insPrdNoSet);
 					
 					int prdCnt = 0;
-					for (Prd prd : prdList){
+					for (Prd prd : insPrds){
 						if (prd == null) continue;
 						se.insertPrd(conn, prd);
 						log(website.getId() + " Insert Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
 						
 						prdCnt++;
 					}
+					
 					
 					
 					for (Prd prd : prdList){

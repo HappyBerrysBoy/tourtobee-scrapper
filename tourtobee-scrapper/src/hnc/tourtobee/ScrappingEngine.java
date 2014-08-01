@@ -300,8 +300,8 @@ public class ScrappingEngine {
 							prdCnt++;
 						}
 					}
-					
 					*/
+					
 					if (insPrds != null && insPrds.size() > 0){
 						for (Prd prd : insPrds){
 							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");

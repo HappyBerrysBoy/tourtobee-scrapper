@@ -118,6 +118,9 @@ public class KRTHandler extends _TouristAgencyHandler{
 					String seq = subHtml.removeTag("TD").removeTag("TD").getTag("TD").toString();
 					String seqArr[] = seq.split("((?i)href)=[\"\']")[1].split("((?i)catNum)=")[1].split("_");
 					seq = seqArr[4] + "_" + seqArr[5];
+					String url = subHtml.removeTag("TD").removeTag("TD").getTag("TD").toString();
+					url = url.split("((?i)href)=[\"']\\.\\./")[1].split("[\"']")[0];
+					url = "http://www.krt.co.kr/" + url;
 					String name = subHtml.removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
 					String airLine = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").toString();
 					airLine = airLine.split("alt=[\"\']")[1];
@@ -153,11 +156,13 @@ public class KRTHandler extends _TouristAgencyHandler{
 					prdDtl.setDepDtYmd(depDt);
 					prdDtl.setDepDtHm(depTm);
 					prdDtl.setDepDtWd(WEEK_DAY_NUMBER.get(wkDay));
+					prdDtl.setPrdUrl(url);
 					prdDtl.setPrdDtlNm(name);
 					prdDtl.setArlnId(airLine);
 					prdDtl.setPrdFeeAd(feeAd);
 					prdDtl.setPrdSt(PRD_STATUS.get(prdSt));
 					
+					System.out.println(url);
 					prdDtlList.add(prdDtl);
 				}
 				
@@ -256,6 +261,9 @@ private ArrayList<Menu> scrapMenu(CloseableHttpClient httpclient, Website websit
 				prd.setDmstDiv("D");
 			}else if (menu.getMenuCode().equals("G7")){
 				prd.setTrDiv(PRD_CLASS.get("골프"));
+				prd.setDmstDiv("A");
+			}else if (menu.getMenuCode().equals("G2")){
+				prd.setTrDiv(PRD_CLASS.get("에어텔")); //자유여행
 				prd.setDmstDiv("A");
 			}else {
 				prd.setTrDiv(PRD_CLASS.get("패키지"));

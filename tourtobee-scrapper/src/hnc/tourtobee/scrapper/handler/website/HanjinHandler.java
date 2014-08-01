@@ -44,6 +44,7 @@ public class HanjinHandler extends _TouristAgencyHandler {
 
 	@Override
 	public ArrayList<Prd> scrapPrdList(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, HashSet<String> insPrds) {
+		ArrayList<Prd> prdList = new ArrayList<Prd>();
 		Html html = new Html(this.getHtml(httpclient, website));
 		ArrayList<Menu> menuList = getMenuUrlList(website, html.removeComment().getValueByClass("mainNavitopd").toString());
 		
@@ -55,11 +56,26 @@ public class HanjinHandler extends _TouristAgencyHandler {
 			menuSite.setMethod(website.getMethod());
 			menuSite.setEncoding(website.getEncoding());
 			
-			html = new Html(this.getHtml(httpclient, menuSite));
-			System.out.println(html.getTag("XML"));
+			Html menuHtml = new Html(this.getHtml(httpclient, menuSite));
+			menuHtml = menuHtml.getTag("xml").getTag("product");
+			
+			while(menuHtml.getTag("item").toString().length() > 0){
+				Html prdHtml = menuHtml.getTag("item");
+				menuHtml = menuHtml.removeTag("item");
+				Prd prd = new Prd();
+				prd.setTagnId(website.getId());
+				prd.setPrdNo(prdHtml.getTag("PRODUCT_CODE").removeAllTags().toString());
+				prd.setPrdNm(prdHtml.getTag("PRODUCT_NAME").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PRODUCT_NAME>", ""));
+				prd.setTrDiv(menu.getMenuCode());
+				prd.setDmstDiv("A");
+				prd.setPrdDesc(prdHtml.getTag("PROINTRODUCE").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PROINTRODUCE>", ""));
+				
+				prdList.add(prd);
+			}
+			
 			break;
 		}
-		return super.scrapPrdList(httpclient, website, options, insPrds);
+		return prdList;
 	}
 
 
@@ -87,6 +103,7 @@ public class HanjinHandler extends _TouristAgencyHandler {
 				menu = new Menu();
 				menu.setMenuName(menuName);
 				menu.setMenuUrl(menuUrl);
+				menu.setMenuCode("P");
 				menuList.add(menu);
 				
 				subMenuHtml = subMenuHtml.removeTag("li");
@@ -108,6 +125,7 @@ public class HanjinHandler extends _TouristAgencyHandler {
 				menu = new Menu();
 				menu.setMenuName(menuName);
 				menu.setMenuUrl(menuUrl);
+				menu.setMenuCode("C");
 				menuList.add(menu);
 				
 				subMenuHtml = subMenuHtml.removeTag("li");
@@ -129,6 +147,7 @@ public class HanjinHandler extends _TouristAgencyHandler {
 				menu = new Menu();
 				menu.setMenuName(menuName);
 				menu.setMenuUrl(menuUrl);
+				menu.setMenuCode("W");
 				menuList.add(menu);
 				
 				subMenuHtml = subMenuHtml.removeTag("li");
@@ -151,6 +170,7 @@ public class HanjinHandler extends _TouristAgencyHandler {
 				menu = new Menu();
 				menu.setMenuName(menuName);
 				menu.setMenuUrl(menuUrl);
+				menu.setMenuCode("G");
 				menuList.add(menu);
 				
 				subMenuHtml = subMenuHtml.removeTag("li");
@@ -164,6 +184,9 @@ public class HanjinHandler extends _TouristAgencyHandler {
 		menu.setMenuName("부산출발");
 		menuList.add(menu);
 
+		
+//		국내, 에어텔은 제외함
+		
 		return menuList;
 	}
 

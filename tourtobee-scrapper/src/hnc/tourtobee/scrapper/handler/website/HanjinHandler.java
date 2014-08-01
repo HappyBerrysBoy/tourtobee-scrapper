@@ -42,6 +42,30 @@ public class HanjinHandler extends _TouristAgencyHandler {
 
 
 
+	@Override
+	public ArrayList<Prd> scrapPrdList(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, HashSet<String> insPrds) {
+		Html html = new Html(this.getHtml(httpclient, website));
+		ArrayList<Menu> menuList = getMenuUrlList(website, html.removeComment().getValueByClass("mainNavitopd").toString());
+		
+		for (Menu menu : menuList){
+			Website menuSite = new Website();
+			menuSite.setId(website.getId());
+			menuSite.setName(website.getName());
+			menuSite.setUrl(menu.getMenuUrl());
+			menuSite.setMethod(website.getMethod());
+			menuSite.setEncoding(website.getEncoding());
+			
+			html = new Html(this.getHtml(httpclient, menuSite));
+			System.out.println(html.getTag("XML"));
+			break;
+		}
+		return super.scrapPrdList(httpclient, website, options, insPrds);
+	}
+
+
+
+
+
 	private ArrayList<Menu> getMenuUrlList(Website website, String htmlStr){
 		ArrayList<Menu> menuList = new ArrayList<Menu>();
 		Menu menu = new Menu();

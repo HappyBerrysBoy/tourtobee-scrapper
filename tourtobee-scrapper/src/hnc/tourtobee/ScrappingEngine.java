@@ -287,25 +287,29 @@ public class ScrappingEngine {
 						insPrdNoSet.add(prd.getPrdNo());
 					}
 					
+					/*
 					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, insPrdNoSet);
 					
 					int prdCnt = 0;
-					for (Prd prd : insPrds){
-						if (prd == null) continue;
-						se.insertPrd(conn, prd);
-						log(website.getId() + " Insert Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
-						
-						prdCnt++;
+					if (prdList != null && prdList.size() > 0){
+						for (Prd prd : prdList){
+							if (prd == null) continue;
+							se.insertPrd(conn, prd);
+							log(website.getId() + " Insert Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
+							
+							prdCnt++;
+						}
 					}
 					
-					
-					
-					for (Prd prd : prdList){
-						log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
-						ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-						log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
-						for (PrdDtl prdDtl : prdDtlList){
-							se.mergePrdDtl(conn, prdDtl);
+					*/
+					if (insPrds != null && insPrds.size() > 0){
+						for (Prd prd : insPrds){
+							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+							ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
+							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+							for (PrdDtl prdDtl : prdDtlList){
+								se.mergePrdDtl(conn, prdDtl);
+							}
 						}
 					}
 

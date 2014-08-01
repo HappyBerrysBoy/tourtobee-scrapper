@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,7 +50,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 			}
 		}
 		
-		HashSet<String> prdUrlSet = (HashSet<String>) prdUrlMenu.keySet();
+		Set<String> prdUrlSet = prdUrlMenu.keySet();
 		for (String prdUrl : prdUrlSet){
 			String prdNo = prdUrl.split("good_cd")[1].split("&")[0].replace("=", "");
 			
@@ -100,9 +101,9 @@ public class KRTHandler extends _TouristAgencyHandler{
 				
 				Html prdDtlListHtml = new Html(this.getHtml(httpclient, prdDtlListSite));
 				prdDtlListHtml = prdDtlListHtml.getTag("div").getTag("table");
+				prdDtlListHtml = new Html(prdDtlListHtml.toString().substring(1));
 				
 				while (true){
-					prdDtlListHtml = new Html(prdDtlListHtml.toString().substring(1));
 					String subHtmlStr = prdDtlListHtml.getTag("table").toString();
 					
 					if (subHtmlStr.trim().length() <= 0) break;
@@ -140,7 +141,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 						prdSt = "예약가능";
 					}
 					
-					prdDtlListHtml = prdDtlListHtml.removeTag("tr");
+					prdDtlListHtml = prdDtlListHtml.removeTag("table");
 					
 	//				System.out.println(depDt + "/" + wkDay + "/" + feeAd + "/" + seq + "/" + name + "/" + depTm + "/" + prdSt);
 	//				System.out.println("==================================");
@@ -159,6 +160,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 					
 					prdDtlList.add(prdDtl);
 				}
+				
 			}
 		}catch(Exception e){
 			log("scrapPrdDtlSmmry", e.toString());

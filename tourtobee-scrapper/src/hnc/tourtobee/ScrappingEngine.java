@@ -36,9 +36,12 @@ public class ScrappingEngine {
 		try{
 			String query = "SELECT TAGN_ID, PRD_NO, PRD_NM, TR_DIV, DMST_DIV, PRD_URL"
 						+ " FROM T_PRD"
-						+ " WHERE TAGN_ID = ?";
+						+ " WHERE TAGN_ID = ?"
+//						+ "   AND PRD_NO NOT IN (SELECT distinct PRD_NO FROM T_PRD_DTL WHERE TAGN_ID = ?)"
+						;
 			PreparedStatement pstmt = conn.prepareStatement(query);
 			pstmt.setString(1, tagnId);
+//			pstmt.setString(2, tagnId);
 			ResultSet rs = pstmt.executeQuery();
 			
 			while(rs.next()){
@@ -269,7 +272,7 @@ public class ScrappingEngine {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					if (!website.getId().equals("Hanjin")) continue;
+					if (website.getId().equals("Hanjin")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();
@@ -288,8 +291,8 @@ public class ScrappingEngine {
 					}
 					
 					
-					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, insPrdNoSet);
-					/*
+					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
+					
 					int prdCnt = 0;
 					if (prdList != null && prdList.size() > 0){
 						for (Prd prd : prdList){
@@ -301,7 +304,7 @@ public class ScrappingEngine {
 						}
 					}
 					
-					*/
+					
 					
 					if (prdList != null && prdList.size() > 0){
 						for (Prd prd : prdList){

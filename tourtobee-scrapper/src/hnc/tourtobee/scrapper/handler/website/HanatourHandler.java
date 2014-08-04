@@ -58,7 +58,10 @@ public class HanatourHandler extends _TouristAgencyHandler {
 		}
 		return prdList;
 	}
-
+	
+	
+	
+	
 	@Override
 	public ArrayList<PrdDtl> scrapPrdDtlSmmry(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, Prd prd) {
 		String url = "http://www.hanatour.com/asp/booking/productPackage/pk-11001-list.asp?"
@@ -67,6 +70,8 @@ public class HanatourHandler extends _TouristAgencyHandler {
 					+ "tour_scheduled_month=";
 		return super.scrapPrdDtlSmmry(httpclient, website, options, prd);
 	}
+	
+	
 	
 	
 	private ArrayList<Menu> scrapPkgMenuList(CloseableHttpClient httpclient, Website website){
@@ -152,5 +157,8 @@ public class HanatourHandler extends _TouristAgencyHandler {
 			private String orderSeq;
 		}
 	}
-
+	
+	private class JsonPrdDtl{
+		
+	}
 }

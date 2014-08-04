@@ -272,7 +272,7 @@ public class ScrappingEngine {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					if (website.getId().equals("Hanjin")) continue;
+					if (!website.getId().equals("hanatour")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();
@@ -306,16 +306,16 @@ public class ScrappingEngine {
 					
 					
 					
-					if (prdList != null && prdList.size() > 0){
-						for (Prd prd : prdList){
-							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
-							ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
-							for (PrdDtl prdDtl : prdDtlList){
-								se.mergePrdDtl(conn, prdDtl);
-							}
-						}
-					}
+//					if (prdList != null && prdList.size() > 0){
+//						for (Prd prd : prdList){
+//							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+//							ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
+//							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+//							for (PrdDtl prdDtl : prdDtlList){
+//								se.mergePrdDtl(conn, prdDtl);
+//							}
+//						}
+//					}
 
 
 				}

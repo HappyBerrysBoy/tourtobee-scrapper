@@ -1,8 +1,8 @@
-package hnc.tourtobee;
+package hnc.tourtobee.scrapper;
 
-import static hnc.tourtobee.util.Util.log;
+
 import static hnc.tourtobee.code.Codes.initCodes;
-import hnc.tourtobee.scrapper.dataobject.Menu;
+import static hnc.tourtobee.util.Util.log;
 import hnc.tourtobee.scrapper.dataobject.Prd;
 import hnc.tourtobee.scrapper.dataobject.PrdDtl;
 import hnc.tourtobee.scrapper.dataobject.TtrTrArea;
@@ -13,23 +13,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+
+import jh.project.httpscrapper.Website;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
-import jh.project.httpscrapper.ScrapItem;
-import jh.project.httpscrapper.ScrapResult;
-import jh.project.httpscrapper.Scrapper;
-import jh.project.httpscrapper.Website;
-import jh.project.httpscrapper.dataobject._DataObject;
 import oracle.jdbc.pool.OracleDataSource;
 
 
-
 public class ScrappingEngine {
+	private Connection conn;
 	
 	public ArrayList<Prd> getInsPrds(Connection conn, String tagnId){
 		ArrayList<Prd> insPrds = new ArrayList<Prd>();
@@ -65,7 +61,7 @@ public class ScrappingEngine {
 	}
 	
 	
-	public void insertPrd(Connection conn, Prd prd) {
+	public void mergePrd(Connection conn, Prd prd) {
 		
 		try{
 			String query = "merge into t_prd a using (select "
@@ -239,95 +235,62 @@ public class ScrappingEngine {
 	}
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	public static void main(String[] args){
+	public void scrapPrdPrdDtlSummary(Website website, HashMap<String, String> options){
+		_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
+		CloseableHttpClient httpclient = HttpClients.createDefault();
 		
-		log("!!!", "Process Start!!");
-		
-		int scrapMonth = 0;
-		
-		if (args != null && args.length >= 1){
-			scrapMonth = Integer.parseInt(args[0]);
+		ArrayList<Prd> insPrds = getInsPrds(this.conn, website.getId());
+		HashSet<String> insPrdNoSet = new HashSet<String>();
+		for (Prd prd : insPrds){
+			insPrdNoSet.add(prd.getPrdNo());
 		}
 		
-		try {
-			OracleDataSource ods = new OracleDataSource();
-			ods.setURL("jdbc:oracle:thin:@hnctech73.iptime.org:1521:ora11g");
-			ods.setUser("bigtour");
-			ods.setPassword("bigtour");
-			Connection conn = ods.getConnection();
-			initCodes(conn);
-			
-			ScrappingEngine se = new ScrappingEngine();
-			Scrapper sc = new Scrapper();
-			ArrayList<ScrapItem> scItemList = sc.getScrapItem();
-			
-			for(ScrapItem scItem : scItemList){
-				ArrayList<Website> websiteList = sc.getWebsite(scItem);
+		
+		ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
+		
+		int prdCnt = 0;
+		if (prdList != null && prdList.size() > 0){
+			for (Prd prd : prdList){
+				if (prd == null) continue;
+				mergePrd(this.conn, prd);
+				log(website.getId() + " Insert Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
 				
-				for(Website website : websiteList){
-					if (!website.getId().equals("hanatour")) continue;
-					log(website.getId(), "Process Start!!");
-					
-					Calendar tempC = Calendar.getInstance();
-					tempC.add(Calendar.MONTH, scrapMonth);
-					String toMonth = String.format("%04d", tempC.get(Calendar.YEAR)) + String.format("%02d", tempC.get(Calendar.MONTH) + 1);
-					HashMap<String, String> options = new HashMap<String, String>();
-					options.put("until", toMonth);
-					
-					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
-					CloseableHttpClient httpclient = HttpClients.createDefault();
-					
-					ArrayList<Prd> insPrds = se.getInsPrds(conn, website.getId());
-					HashSet<String> insPrdNoSet = new HashSet<String>();
-					for (Prd prd : insPrds){
-						insPrdNoSet.add(prd.getPrdNo());
-					}
-					
-					
-					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
-					
-					int prdCnt = 0;
-					if (prdList != null && prdList.size() > 0){
-						for (Prd prd : prdList){
-							if (prd == null) continue;
-							se.insertPrd(conn, prd);
-							log(website.getId() + " Insert Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
-							
-							prdCnt++;
-						}
-					}
-					
-					
-					
-					if (prdList != null && prdList.size() > 0){
-						for (Prd prd : prdList){
-							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
-							ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
-							for (PrdDtl prdDtl : prdDtlList){
-								se.mergePrdDtl(conn, prdDtl);
-							}
-						}
-					}
-
-
-				}
+				prdCnt++;
 			}
-			
-			conn.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 		
-		log("!!!", "Finish!!");
+	}
+	
+	
+	
+	
+	
+	
+	public ScrappingEngine() throws SQLException{
+		OracleDataSource ods = new OracleDataSource();
+		ods.setURL("jdbc:oracle:thin:@hnctech73.iptime.org:1521:ora11g");
+		ods.setUser("bigtour");
+		ods.setPassword("bigtour");
+		this.conn = ods.getConnection();
+		
+		initCodes(this.conn);
+	}
+	
+	
+	
+	public Connection getConn() {
+		return conn;
+	}
+	public void setConn(Connection conn) {
+		this.conn = conn;
+	}
+	public void closeConn(){
+		try{
+			this.conn.close();
+		}catch(Exception e){
+			log(this.getClass().getName(),  e.toString());
+		}
+		this.conn = null;
 	}
 	
 }

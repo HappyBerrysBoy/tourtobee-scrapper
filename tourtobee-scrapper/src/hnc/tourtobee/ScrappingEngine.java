@@ -106,15 +106,16 @@ public class ScrappingEngine {
 			
 			int index = 0;
 			ArrayList<TtrTrArea> areaList = prd.getAreaList();
-			query = "delete from ttr_tr_area where tagn_id =? and prd_no = ?";
-			PreparedStatement deletePstmt = conn.prepareStatement(query);
-			deletePstmt.setString(1, prd.getTagnId());
-			deletePstmt.setString(2, prd.getPrdNo());
-			deletePstmt.executeUpdate();
-			deletePstmt.clearParameters();
-			deletePstmt.close();
-			deletePstmt = null;
-			
+			if (areaList.size() > 0){
+				query = "delete from ttr_tr_area where tagn_id =? and prd_no = ?";
+				PreparedStatement deletePstmt = conn.prepareStatement(query);
+				deletePstmt.setString(1, prd.getTagnId());
+				deletePstmt.setString(2, prd.getPrdNo());
+				deletePstmt.executeUpdate();
+				deletePstmt.clearParameters();
+				deletePstmt.close();
+				deletePstmt = null;
+			}
 			
 			
 			for (TtrTrArea area : areaList){
@@ -306,16 +307,16 @@ public class ScrappingEngine {
 					
 					
 					
-//					if (prdList != null && prdList.size() > 0){
-//						for (Prd prd : prdList){
-//							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
-//							ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-//							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
-//							for (PrdDtl prdDtl : prdDtlList){
-//								se.mergePrdDtl(conn, prdDtl);
-//							}
-//						}
-//					}
+					if (prdList != null && prdList.size() > 0){
+						for (Prd prd : prdList){
+							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+							ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
+							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+							for (PrdDtl prdDtl : prdDtlList){
+								se.mergePrdDtl(conn, prdDtl);
+							}
+						}
+					}
 
 
 				}

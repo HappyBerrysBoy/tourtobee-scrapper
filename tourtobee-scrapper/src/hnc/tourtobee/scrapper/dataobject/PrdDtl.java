@@ -168,8 +168,8 @@ public class PrdDtl extends _DataObject {
 	public String getDepDtWd() {
 		return depDtWd;
 	}
-	public void setDepDtWd(String deptDtWd) {
-		this.depDtWd = deptDtWd;
+	public void setDepDtWd(String depDtWd) {
+		this.depDtWd = depDtWd;
 	}
 	public String getArrDtYmd() {
 		return arrDtYmd;

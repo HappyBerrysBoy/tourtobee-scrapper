@@ -296,10 +296,8 @@ public class ScrappingEngine {
 						for (Prd prd : prdList){
 							if (prd == null) continue;
 							se.insertPrd(conn, prd);
-							log(website.getId() + " Insert Prd ", prd.getPrdNo() + " " + String.valueOf(prdCnt + 1));
-							
+
 							prdCnt++;
-//							break;
 						}
 					}
 					
@@ -311,7 +309,6 @@ public class ScrappingEngine {
 							for (PrdDtl prdDtl : prdDtlList){
 								se.mergePrdDtl(conn, prdDtl);
 							}
-//							break;
 						}
 					}
 				}

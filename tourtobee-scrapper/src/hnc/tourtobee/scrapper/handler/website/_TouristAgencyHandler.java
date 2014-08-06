@@ -78,9 +78,10 @@ public class _TouristAgencyHandler extends _WebsiteHandler {
 		for (String areaCode :  areaCodeList){
 			TtrTrArea area = new TtrTrArea();
 			String[] areaCodeSplit = areaCode.split("/");
-			area.setTrCityCd(areaCodeSplit[0]);
-			area.setTrNtCd(areaCodeSplit[1]);
-			area.setTrCntt(areaCodeSplit[2]);
+			area.setSiteCd(areaCodeSplit[0]);
+			area.setTrCityCd(areaCodeSplit[1]);
+			area.setTrNtCd(areaCodeSplit[2]);
+			area.setTrCntt(areaCodeSplit[3]);
 			areaList.add(area);
 		}
 		

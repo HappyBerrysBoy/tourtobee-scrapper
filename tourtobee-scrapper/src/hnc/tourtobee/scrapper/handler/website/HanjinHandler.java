@@ -56,7 +56,7 @@ public class HanjinHandler extends _TouristAgencyHandler {
 				prd.setTrDiv(menu.getMenuCode());
 				prd.setDmstDiv("A");
 				prd.setPrdDesc(prdHtml.getTag("PROINTRODUCE").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PROINTRODUCE>", ""));
-				prd.setAreaList(this.getAreaList(prd.getPrdNm(), menu.getMenuName()));
+				prd.setAreaList(this.getAreaList(prd.getPrdNm() + " " + prd.getPrdDesc(), menu.getMenuName()));
 				prd.setDepArpt(ARPT_NAME_CODE.get(depArpt));
 				
 				if (insPrds == null || !insPrds.contains(prd.getPrdNo())){

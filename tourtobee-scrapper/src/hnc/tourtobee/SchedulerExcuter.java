@@ -23,7 +23,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.sun.xml.internal.ws.wsdl.writer.UsingAddressing;
-
+/**
+ * 스케줄러를 가동하는 Class
+ * @author purepleya
+ *
+ */
 public class SchedulerExcuter {
 	public static void main(String[] args){
 		

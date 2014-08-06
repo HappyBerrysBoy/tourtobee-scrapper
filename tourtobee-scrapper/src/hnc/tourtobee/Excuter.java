@@ -18,7 +18,11 @@ import jh.project.httpscrapper.Website;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-
+/**
+ * Scrapper를 직접 실행하고자 할때 사용하는 Class
+ * @author purepleya
+ *
+ */
 public class Excuter {
 	public static void main(String[] args){
 		

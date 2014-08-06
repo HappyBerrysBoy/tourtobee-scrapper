@@ -13,7 +13,10 @@ import jh.project.httpscrapper.Website;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-
+/**
+ * PrdDtl 요약정보를 입력하는 Job (Quratz) 
+ * @author purepleya
+ */
 public class ScrapPrdDtlSummaryJob implements Job{
 	private int threadNo;
 	private int noOfThreads;

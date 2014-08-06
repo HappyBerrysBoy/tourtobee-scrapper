@@ -55,7 +55,12 @@ public class ScrappingEngine {
 		initCodes(this.conn);
 	}
 	
-		
+	/**
+	 * 이미 입력된 Prd를 조회 한다.(T_PRD)
+	 * @param conn Connection
+	 * @param tagnId TAGN_ID
+	 * @return 이미 입력된 Prd 목록
+	 */
 	public ArrayList<Prd> getInsPrds(Connection conn, String tagnId){
 		ArrayList<Prd> insPrds = new ArrayList<Prd>();
 		try{
@@ -90,6 +95,11 @@ public class ScrappingEngine {
 	}
 	
 	
+	/**
+	 * T_PRD 자료를 merge (insert or update) 한다.
+	 * @param conn Connection
+	 * @param prd PRD
+	 */
 	public void mergePrd(Connection conn, Prd prd) {
 		
 		try{
@@ -174,6 +184,11 @@ public class ScrappingEngine {
 	}
 	
 	
+	/**
+	 * T_PRD_DTL 자료를 merge (insert or update) 한다.
+	 * @param conn Connection
+	 * @param prdDtl PrdDtl
+	 */
 	public void mergePrdDtl(Connection conn, PrdDtl prdDtl){
 		
 		String query = "merge into t_prd_dtl a using ("
@@ -264,8 +279,11 @@ public class ScrappingEngine {
 	}
 	
 	
-	
-	
+	/**
+	 * Prd, Prd와 연결된 PrdDtl의 값을 Scrap 하여 merge 한다.
+	 * @param website Scrap할 website
+	 * @param options until 또는 month로 입력된 option 값
+	 */
 	public void scrapPrd(Website website, HashMap<String, String> options){
 		_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
@@ -307,8 +325,11 @@ public class ScrappingEngine {
 	}
 	
 	
-	
-	
+	/**
+	 * 이미 입력된 Prd를 조회해 이들의 PrdDtl을 merge 한다.
+	 * @param website Scrap할 website
+	 * @param options until 또는 month로 입력된 option 값
+	 */
 	public void scrapDtlSummary(Website website, HashMap<String, String> options){
 		_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 		CloseableHttpClient httpclient = HttpClients.createDefault();

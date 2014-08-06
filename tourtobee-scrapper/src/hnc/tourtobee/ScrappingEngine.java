@@ -272,7 +272,7 @@ public class ScrappingEngine {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					if (website.getId().equals("Hanjin")) continue;
+					if (!website.getId().equals("ybtour")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();
@@ -290,7 +290,6 @@ public class ScrappingEngine {
 						insPrdNoSet.add(prd.getPrdNo());
 					}
 					
-					
 					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
 					
 					int prdCnt = 0;
@@ -298,13 +297,12 @@ public class ScrappingEngine {
 						for (Prd prd : prdList){
 							if (prd == null) continue;
 							se.insertPrd(conn, prd);
-							log(website.getId() + " Insert Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
+							log(website.getId() + " Insert Prd ", prd.getPrdNo() + " " + String.valueOf(prdCnt + 1));
 							
 							prdCnt++;
+//							break;
 						}
 					}
-					
-					
 					
 					if (prdList != null && prdList.size() > 0){
 						for (Prd prd : prdList){
@@ -314,10 +312,9 @@ public class ScrappingEngine {
 							for (PrdDtl prdDtl : prdDtlList){
 								se.mergePrdDtl(conn, prdDtl);
 							}
+//							break;
 						}
 					}
-
-
 				}
 			}
 			

@@ -50,7 +50,7 @@ public class Excuter {
 					HashMap<String, String> options = new HashMap<String, String>();
 					options.put("until", toMonth);
 					
-					se.scrapPrdPrdDtlSummary(website, options);
+					se.scrapPrd(website, options);
 					
 //					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 //					CloseableHttpClient httpclient = HttpClients.createDefault();
@@ -98,5 +98,6 @@ public class Excuter {
 		}
 		
 		log("!!!", "Finish!!");
+		
 	}
 }

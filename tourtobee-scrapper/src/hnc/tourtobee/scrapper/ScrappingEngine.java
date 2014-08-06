@@ -27,6 +27,35 @@ import oracle.jdbc.pool.OracleDataSource;
 public class ScrappingEngine {
 	private Connection conn;
 	
+	public Connection getConn() {
+		return conn;
+	}
+	public void setConn(Connection conn) {
+		this.conn = conn;
+	}
+	public void closeConn(){
+		try{
+			this.conn.close();
+		}catch(Exception e){
+			log(this.getClass().getName(),  e.toString());
+		}
+		this.conn = null;
+	}
+	public void initConn() throws SQLException{
+		this.conn = null;
+		OracleDataSource ods = new OracleDataSource();
+		ods.setURL("jdbc:oracle:thin:@hnctech73.iptime.org:1521:ora11g");
+		ods.setUser("bigtour");
+		ods.setPassword("bigtour");
+		this.conn = ods.getConnection();
+	}
+	
+	public ScrappingEngine() throws SQLException{
+		initConn();
+		initCodes(this.conn);
+	}
+	
+		
 	public ArrayList<Prd> getInsPrds(Connection conn, String tagnId){
 		ArrayList<Prd> insPrds = new ArrayList<Prd>();
 		try{
@@ -235,28 +264,44 @@ public class ScrappingEngine {
 	}
 	
 	
-	public void scrapPrdPrdDtlSummary(Website website, HashMap<String, String> options){
+	
+	
+	public void scrapPrd(Website website, HashMap<String, String> options){
 		_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		
-		ArrayList<Prd> insPrds = getInsPrds(this.conn, website.getId());
-		HashSet<String> insPrdNoSet = new HashSet<String>();
-		for (Prd prd : insPrds){
-			insPrdNoSet.add(prd.getPrdNo());
-		}
-		
-		
-		ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
-		
-		int prdCnt = 0;
-		if (prdList != null && prdList.size() > 0){
-			for (Prd prd : prdList){
-				if (prd == null) continue;
-				mergePrd(this.conn, prd);
-				log(website.getId() + " Insert Prd ", prd.getPrdNo() + String.valueOf(prdCnt + 1));
-				
-				prdCnt++;
+		try {
+			if (!this.conn.isValid(10)) initConn();
+			
+			log(website.getId() + " scrapPrd Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
+			
+			ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
+			log(website.getId() + " Scrap Prd ", prdList.size() + " Prds");
+			
+			int prdCnt = 0;
+			if (prdList != null && prdList.size() > 0){
+				for (Prd prd : prdList){
+					if (prd == null) continue;
+					mergePrd(this.conn, prd);
+					prdCnt++;
+					log(website.getId() + " Merge Prd ", prd.getPrdNo() + " (" + prdCnt + "/" + prdList.size() + ")");
+				}
 			}
+			
+			if (prdList != null && prdList.size() > 0){
+				for (Prd prd : prdList){
+					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
+					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+					for (PrdDtl prdDtl : prdDtlList){
+						mergePrdDtl(this.conn, prdDtl);
+					}
+				}
+			}
+			
+			log(website.getId() + " scrapPrd Finish ", "!!!!!!!!!!!!!!!!!!!!!!!!");
+		} catch (SQLException e) {
+			log(this.getClass().getName() + "-scrapPrd", e.toString());
 		}
 		
 	}
@@ -264,33 +309,33 @@ public class ScrappingEngine {
 	
 	
 	
-	
-	
-	public ScrappingEngine() throws SQLException{
-		OracleDataSource ods = new OracleDataSource();
-		ods.setURL("jdbc:oracle:thin:@hnctech73.iptime.org:1521:ora11g");
-		ods.setUser("bigtour");
-		ods.setPassword("bigtour");
-		this.conn = ods.getConnection();
+	public void scrapDtlSummary(Website website, HashMap<String, String> options){
+		_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
+		CloseableHttpClient httpclient = HttpClients.createDefault();
 		
-		initCodes(this.conn);
-	}
-	
-	
-	
-	public Connection getConn() {
-		return conn;
-	}
-	public void setConn(Connection conn) {
-		this.conn = conn;
-	}
-	public void closeConn(){
-		try{
-			this.conn.close();
-		}catch(Exception e){
-			log(this.getClass().getName(),  e.toString());
+		try {
+			if (!this.conn.isValid(10)) initConn();
+			
+			log(website.getId() + " scrapDtlSummary Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
+			ArrayList<Prd> insPrds = getInsPrds(this.conn, website.getId());
+			
+			if (insPrds != null && insPrds.size() > 0){
+				for (Prd prd : insPrds){
+					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
+					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+					for (PrdDtl prdDtl : prdDtlList){
+						mergePrdDtl(this.conn, prdDtl);
+					}
+				}
+			}
+			log(website.getId() + " scrapDtlSummary Finish ", "!!!!!!!!!!!!!!!!!!!!!!!!");
+		} catch (SQLException e) {
+			log(this.getClass().getName() + "-scrapDtlSummary", e.toString());
 		}
-		this.conn = null;
 	}
+	
+	
+	
 	
 }

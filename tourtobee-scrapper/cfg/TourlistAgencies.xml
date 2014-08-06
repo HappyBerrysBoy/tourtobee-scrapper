@@ -12,4 +12,10 @@
 		<encoding>utf-8</encoding>
 		<method>GET</method>
 	</site>
+	<site id="hanatour" handler="hnc.tourtobee.scrapper.handler.website.HanatourHandler">
+		<name>하나투어</name>
+		<url>http://www.hanatour.com/</url>
+		<encoding>euc-kr</encoding>
+		<method>GET</method>
+	</site>
 </site-list>

@@ -1,8 +1,8 @@
-package hnc.tourtobee;
+package hnc.tourtobee.scrapper;
 
-import static hnc.tourtobee.util.Util.log;
+
 import static hnc.tourtobee.code.Codes.initCodes;
-import hnc.tourtobee.scrapper.dataobject.Menu;
+import static hnc.tourtobee.util.Util.log;
 import hnc.tourtobee.scrapper.dataobject.Prd;
 import hnc.tourtobee.scrapper.dataobject.PrdDtl;
 import hnc.tourtobee.scrapper.dataobject.TtrTrArea;
@@ -13,24 +13,54 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+
+import jh.project.httpscrapper.Website;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
-import jh.project.httpscrapper.ScrapItem;
-import jh.project.httpscrapper.ScrapResult;
-import jh.project.httpscrapper.Scrapper;
-import jh.project.httpscrapper.Website;
-import jh.project.httpscrapper.dataobject._DataObject;
 import oracle.jdbc.pool.OracleDataSource;
 
 
-
 public class ScrappingEngine {
+	private Connection conn;
 	
+	public Connection getConn() {
+		return conn;
+	}
+	public void setConn(Connection conn) {
+		this.conn = conn;
+	}
+	public void closeConn(){
+		try{
+			this.conn.close();
+		}catch(Exception e){
+			log(this.getClass().getName(),  e.toString());
+		}
+		this.conn = null;
+	}
+	public void initConn() throws SQLException{
+		this.conn = null;
+		OracleDataSource ods = new OracleDataSource();
+		ods.setURL("jdbc:oracle:thin:@hnctech73.iptime.org:1521:ora11g");
+		ods.setUser("bigtour");
+		ods.setPassword("bigtour");
+		this.conn = ods.getConnection();
+	}
+	
+	public ScrappingEngine() throws SQLException{
+		initConn();
+		initCodes(this.conn);
+	}
+	
+	/**
+	 * 이미 입력된 Prd를 조회 한다.(T_PRD)
+	 * @param conn Connection
+	 * @param tagnId TAGN_ID
+	 * @return 이미 입력된 Prd 목록
+	 */
 	public ArrayList<Prd> getInsPrds(Connection conn, String tagnId){
 		ArrayList<Prd> insPrds = new ArrayList<Prd>();
 		try{
@@ -65,7 +95,12 @@ public class ScrappingEngine {
 	}
 	
 	
-	public void insertPrd(Connection conn, Prd prd) {
+	/**
+	 * T_PRD 자료를 merge (insert or update) 한다.
+	 * @param conn Connection
+	 * @param prd PRD
+	 */
+	public void mergePrd(Connection conn, Prd prd) {
 		
 		try{
 			String query = "merge into t_prd a using (select "
@@ -106,15 +141,16 @@ public class ScrappingEngine {
 			
 			int index = 0;
 			ArrayList<TtrTrArea> areaList = prd.getAreaList();
-			query = "delete from ttr_tr_area where tagn_id =? and prd_no = ?";
-			PreparedStatement deletePstmt = conn.prepareStatement(query);
-			deletePstmt.setString(1, prd.getTagnId());
-			deletePstmt.setString(2, prd.getPrdNo());
-			deletePstmt.executeUpdate();
-			deletePstmt.clearParameters();
-			deletePstmt.close();
-			deletePstmt = null;
-			
+			if (areaList.size() > 0){
+				query = "delete from ttr_tr_area where tagn_id =? and prd_no = ?";
+				PreparedStatement deletePstmt = conn.prepareStatement(query);
+				deletePstmt.setString(1, prd.getTagnId());
+				deletePstmt.setString(2, prd.getPrdNo());
+				deletePstmt.executeUpdate();
+				deletePstmt.clearParameters();
+				deletePstmt.close();
+				deletePstmt = null;
+			}
 			
 			
 			for (TtrTrArea area : areaList){
@@ -148,6 +184,11 @@ public class ScrappingEngine {
 	}
 	
 	
+	/**
+	 * T_PRD_DTL 자료를 merge (insert or update) 한다.
+	 * @param conn Connection
+	 * @param prdDtl PrdDtl
+	 */
 	public void mergePrdDtl(Connection conn, PrdDtl prdDtl){
 		
 		String query = "merge into t_prd_dtl a using ("
@@ -238,36 +279,42 @@ public class ScrappingEngine {
 	}
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	public static void main(String[] args){
-		
-		log("!!!", "Process Start!!");
-		
-		int scrapMonth = 0;
-		
-		if (args != null && args.length >= 1){
-			scrapMonth = Integer.parseInt(args[0]);
-		}
+	/**
+	 * Prd, Prd와 연결된 PrdDtl의 값을 Scrap 하여 merge 한다.
+	 * @param website Scrap할 website
+	 * @param options until 또는 month로 입력된 option 값
+	 */
+	public void scrapPrd(Website website, HashMap<String, String> options){
+		_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
+		CloseableHttpClient httpclient = HttpClients.createDefault();
 		
 		try {
-			OracleDataSource ods = new OracleDataSource();
-			ods.setURL("jdbc:oracle:thin:@hnctech73.iptime.org:1521:ora11g");
-			ods.setUser("bigtour");
-			ods.setPassword("bigtour");
-			Connection conn = ods.getConnection();
-			initCodes(conn);
+			if (!this.conn.isValid(10)) initConn();
 			
-			ScrappingEngine se = new ScrappingEngine();
-			Scrapper sc = new Scrapper();
-			ArrayList<ScrapItem> scItemList = sc.getScrapItem();
+			log(website.getId() + " scrapPrd Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 			
+<<<<<<< HEAD:tourtobee-scrapper/src/hnc/tourtobee/scrapper/ScrappingEngine.java
+			ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
+			log(website.getId() + " Scrap Prd ", prdList.size() + " Prds");
+			
+			int prdCnt = 0;
+			if (prdList != null && prdList.size() > 0){
+				for (Prd prd : prdList){
+					if (prd == null) continue;
+					mergePrd(this.conn, prd);
+					prdCnt++;
+					log(website.getId() + " Merge Prd ", prd.getPrdNo() + " (" + prdCnt + "/" + prdList.size() + ")");
+				}
+			}
+			
+			if (prdList != null && prdList.size() > 0){
+				for (Prd prd : prdList){
+					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
+					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+					for (PrdDtl prdDtl : prdDtlList){
+						mergePrdDtl(this.conn, prdDtl);
+=======
 			for(ScrapItem scItem : scItemList){
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
@@ -309,16 +356,51 @@ public class ScrappingEngine {
 								se.mergePrdDtl(conn, prdDtl);
 							}
 						}
+>>>>>>> aadd559723496dd22f8485c0e2b50c83045d9ebd:tourtobee-scrapper/src/hnc/tourtobee/ScrappingEngine.java
 					}
 				}
 			}
 			
-			conn.close();
+			log(website.getId() + " scrapPrd Finish ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 		} catch (SQLException e) {
-			e.printStackTrace();
+			log(this.getClass().getName() + "-scrapPrd", e.toString());
 		}
 		
-		log("!!!", "Finish!!");
 	}
+	
+	
+	/**
+	 * 이미 입력된 Prd를 조회해 이들의 PrdDtl을 merge 한다.
+	 * @param website Scrap할 website
+	 * @param options until 또는 month로 입력된 option 값
+	 */
+	public void scrapDtlSummary(Website website, HashMap<String, String> options){
+		_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		
+		try {
+			if (!this.conn.isValid(10)) initConn();
+			
+			log(website.getId() + " scrapDtlSummary Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
+			ArrayList<Prd> insPrds = getInsPrds(this.conn, website.getId());
+			
+			if (insPrds != null && insPrds.size() > 0){
+				for (Prd prd : insPrds){
+					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
+					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+					for (PrdDtl prdDtl : prdDtlList){
+						mergePrdDtl(this.conn, prdDtl);
+					}
+				}
+			}
+			log(website.getId() + " scrapDtlSummary Finish ", "!!!!!!!!!!!!!!!!!!!!!!!!");
+		} catch (SQLException e) {
+			log(this.getClass().getName() + "-scrapDtlSummary", e.toString());
+		}
+	}
+	
+	
+	
 	
 }

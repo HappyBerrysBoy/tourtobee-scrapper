@@ -9,6 +9,8 @@ import java.util.Set;
 
 public class Codes {
 	
+	public static HashMap<String, String> SITE_NAME_CODE;
+	public static HashMap<String, String> SITE_CODE_CITY_CODE;
 	public static HashMap<String, String> CITY_NAME_CODE;
 	public static HashMap<String, String> CITY_NAME_EN_CODE;
 	public static HashMap<String, String> CITY_CODE_NATION_CODE;
@@ -38,9 +40,7 @@ public class Codes {
 	 * RF	예약마감
 	 */
 	public static HashMap<String, String> PRD_STATUS;
-	
 	public static final HashMap<String, String> WEEK_DAY_NUMBER;
-	
 	static
     {
 		WEEK_DAY_NUMBER = new HashMap<String, String>();
@@ -62,6 +62,9 @@ public class Codes {
 		Codes code = new Codes();
 		try{
 			if (conn != null){
+				if (SITE_NAME_CODE == null || SITE_CODE_CITY_CODE == null)
+					code.setSiteCodes(conn);
+				
 				if (CITY_NAME_CODE == null || CITY_NAME_EN_CODE == null || CITY_CODE_NATION_CODE == null)
 					code.setCityCodes(conn);
 				
@@ -85,7 +88,28 @@ public class Codes {
 			e.printStackTrace();
 		}
 	}
-
+	
+	
+	/**
+	 * SITE_NAME_CODE, SITE_CODE_CITY_CODE 변수를 세팅한다.
+	 * @param conn DB Connection
+	 * @throws Exception
+	 */
+	public void setSiteCodes(Connection conn) throws Exception{
+		SITE_NAME_CODE = new HashMap<String, String>();
+		SITE_CODE_CITY_CODE = new HashMap<String, String>();
+		
+		String query = "SELECT SITE_NM, SITE_CD, CITY_CD"
+				+ " FROM TMP_SITE";
+		Statement stmt = conn.createStatement();
+		ResultSet rs = stmt.executeQuery(query);
+		
+		while(rs.next()){
+			SITE_NAME_CODE.put(rs.getString("SITE_NM"), rs.getString("SITE_CD"));
+			SITE_CODE_CITY_CODE.put(rs.getString("SITE_CD"), rs.getString("CITY_CD"));
+		}
+	}
+	
 	/**
 	* CITY_NAME_CODES, CITY_NAME_EN_CODES, CITY_CODES_NATION_CODE 변수를 세팅한다.
 	* @param con DB Connection
@@ -217,11 +241,31 @@ public class Codes {
 	}
 	
 	
+	
+	/**
+	* 관광지코드를 이용하여 국가코드, 대륙 코드, 도시코드를 조회, 결과값을 반환한다.
+	* @param con DB Connection
+	* @param cityCode 도시코드
+	* @return 관광지코드/도시코드/국가코드/대륙코드 
+	*/
+	public static String getAreaStringBySiteCode(String siteCode){
+		String cityCode = "";
+		String nationCode = "";
+		String continentCode = "";
+		
+		cityCode = SITE_CODE_CITY_CODE.get(siteCode) == null ? "" : SITE_CODE_CITY_CODE.get(siteCode);
+		nationCode = CITY_CODE_NATION_CODE.get(cityCode) == null ? "" : CITY_CODE_NATION_CODE.get(cityCode);
+		continentCode = NATION_CODE_CONTINENT_CODE.get(nationCode) == null ? "" : NATION_CODE_CONTINENT_CODE.get(nationCode);
+		
+		return siteCode + "/" + cityCode + "/" + nationCode + "/" +  continentCode;
+	}
+	
+	
 	/**
 	* 도시코드를 이용하여 국가코드, 대륙 코드를 조회, 결과값을 반환한다.
 	* @param con DB Connection
 	* @param cityCode 도시코드
-	* @return 도시코드/국가코드/대륙코드 
+	* @return /도시코드/국가코드/대륙코드 
 	*/
 	public static String getAreaStringByCityCode(String cityCode){
 		String nationCode = "";
@@ -230,21 +274,40 @@ public class Codes {
 		nationCode = CITY_CODE_NATION_CODE.get(cityCode) == null ? "" : CITY_CODE_NATION_CODE.get(cityCode);
 		continentCode = NATION_CODE_CONTINENT_CODE.get(nationCode) == null ? "" : NATION_CODE_CONTINENT_CODE.get(nationCode);
 		
-		return cityCode + "/" + nationCode + "/" +  continentCode;
+		return "/" + cityCode + "/" + nationCode + "/" +  continentCode;
 	}
+	
 	
 	/**
 	* 국가코드를 이용하여 국가코드, 대륙 코드를 조회, 결과값을 반환한다.
 	* @param con DB Connection
 	* @param nationCode 도시코드
-	* @return /국가코드/대륙코드 
+	* @return //국가코드/대륙코드 
 	*/
 	public static String getAreaStringByNationCode(String nationCode){
 		String continentCode = "";
 		
 		continentCode = NATION_CODE_CONTINENT_CODE.get(nationCode) == null ? "" : NATION_CODE_CONTINENT_CODE.get(nationCode);
 		
-		return "/" + nationCode + "/" +  continentCode;
+		return "//" + nationCode + "/" +  continentCode;
+	}
+		
+
+	/**
+	* 문자열에 포함된 관광지명을 검색해 관광지 코드 목록을 반환한다.
+	* @param str 검색하고자 하는 문자열
+	* @return 문자열에 포함된 관광지 코드 
+	*/
+	public static ArrayList<String> findSiteCodeByName(String str){
+		ArrayList<String> siteCodes = new ArrayList<String>();
+		
+		Set<String> siteNameSet = SITE_NAME_CODE.keySet();
+		
+		for (String siteName : siteNameSet){
+			if (str.contains(siteName)) siteCodes.add(SITE_NAME_CODE.get(siteName));
+		}
+		
+		return siteCodes;
 	}
 	
 	
@@ -301,16 +364,60 @@ public class Codes {
 	
 	
 	/**
-	* 문자열에 포함된 대륙명을 검색해 대륙 코드 목록을 반환한다.
+	* 문자열에 포함된 지역코드를 찾아서 반환한다.
 	* @param str 검색하고자 하는 문자열
-	* @return 문자열에 포함된 대륙 코드 
+	* @return "관광지코드/도시코드/국가코드/대륙코드" 형태의 String ArrayList 
 	*/
 	public static ArrayList<String> findGetAreaString(String str){
 		ArrayList<String> areaStringList = new ArrayList<String>();
 		
+		ArrayList<String> siteCodeList = Codes.findSiteCodeByName(str);
 		ArrayList<String> cityCodeList = Codes.findCityCodeByName(str);
 		ArrayList<String> nationCodeList = Codes.findNationCodeByName(str);
 		ArrayList<String> continentCodeList = Codes.findContinentCodeByName(str);
+		
+		for (String siteCode : siteCodeList){
+			String siteCityCode = Codes.SITE_CODE_CITY_CODE.get(siteCode);
+			int i = 0;
+			while(true){
+				if (i >= cityCodeList.size()) break;
+				
+				String cityCode = cityCodeList.get(i);
+				if (siteCityCode.equals(cityCode)){
+					cityCodeList.remove(i);
+				}else{
+					i++;
+				}
+			}
+			
+			String siteNationCode = Codes.CITY_CODE_NATION_CODE.get(siteCityCode);
+			i = 0;
+			while(true){
+				if (i >= nationCodeList.size()) break;
+				
+				String nationCode = nationCodeList.get(i);
+				if (siteNationCode.equals(nationCode)){
+					nationCodeList.remove(i);
+				}else{
+					i++;
+				}
+			}
+			
+			String siteContinentCode = Codes.NATION_CODE_CONTINENT_CODE.get(siteNationCode);
+			i = 0;
+			while(true){
+				if (i >= continentCodeList.size()) break;
+				
+				String continentCode = continentCodeList.get(i);
+				if (siteContinentCode.equals(continentCode)){
+					continentCodeList.remove(i);
+				}else{
+					i++;
+				}
+			}
+			
+			areaStringList.add(Codes.getAreaStringBySiteCode(siteCode));
+		}
 		
 		for (String cityCode : cityCodeList){
 			String cityNationCode = Codes.CITY_CODE_NATION_CODE.get(cityCode);
@@ -360,7 +467,7 @@ public class Codes {
 		}
 		
 		for (String continentCode : continentCodeList){
-			areaStringList.add("//" + continentCode);
+			areaStringList.add("///" + continentCode);
 		}
 		
 		return areaStringList;

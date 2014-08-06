@@ -296,7 +296,6 @@ public class ScrappingEngine {
 						for (Prd prd : prdList){
 							if (prd == null) continue;
 							se.insertPrd(conn, prd);
-
 							prdCnt++;
 						}
 					}

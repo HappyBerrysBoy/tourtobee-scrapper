@@ -293,7 +293,6 @@ public class ScrappingEngine {
 			
 			log(website.getId() + " scrapPrd Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 			
-<<<<<<< HEAD:tourtobee-scrapper/src/hnc/tourtobee/scrapper/ScrappingEngine.java
 			ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
 			log(website.getId() + " Scrap Prd ", prdList.size() + " Prds");
 			
@@ -314,49 +313,6 @@ public class ScrappingEngine {
 					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
 					for (PrdDtl prdDtl : prdDtlList){
 						mergePrdDtl(this.conn, prdDtl);
-=======
-			for(ScrapItem scItem : scItemList){
-				ArrayList<Website> websiteList = sc.getWebsite(scItem);
-				
-				for(Website website : websiteList){
-					log(website.getId(), "Process Start!!");
-					
-					Calendar tempC = Calendar.getInstance();
-					tempC.add(Calendar.MONTH, scrapMonth);
-					String toMonth = String.format("%04d", tempC.get(Calendar.YEAR)) + String.format("%02d", tempC.get(Calendar.MONTH) + 1);
-					HashMap<String, String> options = new HashMap<String, String>();
-					options.put("until", toMonth);
-					
-					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
-					CloseableHttpClient httpclient = HttpClients.createDefault();
-					
-					ArrayList<Prd> insPrds = se.getInsPrds(conn, website.getId());
-					HashSet<String> insPrdNoSet = new HashSet<String>();
-					for (Prd prd : insPrds){
-						insPrdNoSet.add(prd.getPrdNo());
-					}
-					
-					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
-					
-					int prdCnt = 0;
-					if (prdList != null && prdList.size() > 0){
-						for (Prd prd : prdList){
-							if (prd == null) continue;
-							se.insertPrd(conn, prd);
-							prdCnt++;
-						}
-					}
-					
-					if (prdList != null && prdList.size() > 0){
-						for (Prd prd : prdList){
-							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
-							ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
-							for (PrdDtl prdDtl : prdDtlList){
-								se.mergePrdDtl(conn, prdDtl);
-							}
-						}
->>>>>>> aadd559723496dd22f8485c0e2b50c83045d9ebd:tourtobee-scrapper/src/hnc/tourtobee/ScrappingEngine.java
 					}
 				}
 			}

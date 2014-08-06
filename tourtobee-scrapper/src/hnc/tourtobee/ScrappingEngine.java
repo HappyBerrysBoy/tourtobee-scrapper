@@ -272,7 +272,6 @@ public class ScrappingEngine {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					if (!website.getId().equals("ybtour")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();

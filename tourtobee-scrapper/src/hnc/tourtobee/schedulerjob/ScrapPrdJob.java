@@ -65,7 +65,7 @@ public class ScrapPrdJob implements Job{
 					if ((i % noOfThreads) != threadNo) continue;
 					Website website = websiteList.get(i);
 					log(website.getId(), "ScrapPrdJob Start !!!");
-					se.scrapDtlSummary(website, options);
+					se.scrapPrd(website, options);
 					log(website.getId(), "ScrapPrdJob Finish !!!");
 				}
 			}

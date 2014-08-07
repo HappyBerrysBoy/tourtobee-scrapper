@@ -26,7 +26,7 @@ public class HanjinHandler extends _TouristAgencyHandler {
 		ArrayList<Menu> menuList = getMenuUrlList(website, html.removeComment().getValueByClass("mainNavitopd").toString());
 		
 		for (Menu menu : menuList){
-			log("  Prd Scrapping", "Menu " + menu.getMenuName() + " Scrapping");
+			log(website.getId() + " - Get Menu", menu.getMenuName());
 			Website menuSite = new Website();
 			menuSite.setId(website.getId());
 			menuSite.setName(website.getName());

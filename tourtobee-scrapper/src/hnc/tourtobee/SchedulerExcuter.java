@@ -6,7 +6,6 @@ import static org.quartz.TriggerBuilder.newTrigger;
 import static hnc.tourtobee.util.Util.log;
 
 import java.io.File;
-import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -22,7 +21,6 @@ import org.quartz.Trigger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import com.sun.xml.internal.ws.wsdl.writer.UsingAddressing;
 /**
  * 스케줄러를 가동하는 Class
  * @author purepleya

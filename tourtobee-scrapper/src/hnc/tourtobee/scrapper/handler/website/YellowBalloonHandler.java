@@ -227,14 +227,6 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 		return prdList;
 	}
 	
-	private String getOnlyNumber(String html){
-		String result = html;
-		Pattern tag = Pattern.compile("[^0-9]+");
-		Matcher mat = tag.matcher(result);
-		result = mat.replaceAll("");
-		
-		return result;
-	}
 	
 	@Override
 	public ArrayList<PrdDtl> scrapPrdDtlSmmry(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, Prd prd) {

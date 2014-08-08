@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import jh.project.httpscrapper.ScrapItem;
 import jh.project.httpscrapper.Website;
 
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -191,7 +192,8 @@ public class ScrappingEngine {
 	 */
 	public void mergePrdDtl(Connection conn, PrdDtl prdDtl){
 		
-		String query = "merge into t_prd_dtl a using ("
+		try{
+			String query = "merge into t_prd_dtl a using ("
 						+ "select ? tagn_id"
 						+ ", ? prd_no"
 						+ ", ? prd_seq"
@@ -244,7 +246,7 @@ public class ScrappingEngine {
 					+ " when not matched then insert (TAGN_ID, PRD_NO, PRD_SEQ, PRD_DTL_NM, DEP_DT, ARR_DT, TR_TERM, DEP_ARPT, ARR_ARPT, ARLN_ID, PRD_ST, PRD_URL, PRD_FEE_AD, PRD_FEE_CH, PRD_FEE_BB, CMPS_SEAT, EXG_DIV, SEL_DT, TR_TERM_BAK, DEP_DT_YMD, DEP_DT_HM, DEP_DT_WD, ARR_DT_YMD, ARR_DT_HM, ARR_DT_WD)"
 					+ " values ( b.tagn_id , b.prd_no , b.PRD_SEQ , b.PRD_DTL_NM , to_date(b.DEP_DT, 'yyyymmddhh24mi') , to_date(b.ARR_DT, 'yyyymmddhh24mi') , TRUNC(to_date(b.ARR_DT, 'yyyymmddhh24mi')) - TRUNC(to_date(b.DEP_DT, 'yyyymmddhh24mi')) + 1 , b.DEP_ARPT , b.ARR_ARPT , b.ARLN_ID ,b.PRD_ST , b.PRD_URL , b.PRD_FEE_AD , b.PRD_FEE_CH , b.PRD_FEE_BB , b.CMPS_SEAT , b.EXG_DIV , sysdate, b.TR_TERM_BAK, b.DEP_DT_YMD, b.DEP_DT_HM, b.DEP_DT_WD, b.ARR_DT_YMD, b.ARR_DT_HM, b.ARR_DT_WD)";
 		
-		try{
+		
 			PreparedStatement pstmt = conn.prepareStatement(query);
 			pstmt.setString(1, prdDtl.getTagnId());
 			pstmt.setString(2, prdDtl.getPrdNo());
@@ -287,16 +289,15 @@ public class ScrappingEngine {
 	public void scrapPrd(Website website, HashMap<String, String> options){
 		_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
-		
+
 		try {
 			if (!this.conn.isValid(10)) initConn();
-			
+
 			log(website.getId() + " scrapPrd Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
-			
-<<<<<<< HEAD:tourtobee-scrapper/src/hnc/tourtobee/scrapper/ScrappingEngine.java
+
 			ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
 			log(website.getId() + " Scrap Prd ", prdList.size() + " Prds");
-			
+
 			int prdCnt = 0;
 			if (prdList != null && prdList.size() > 0){
 				for (Prd prd : prdList){
@@ -306,61 +307,18 @@ public class ScrappingEngine {
 					log(website.getId() + " Merge Prd ", prd.getPrdNo() + " (" + prdCnt + "/" + prdList.size() + ")");
 				}
 			}
-			
+
 			if (prdList != null && prdList.size() > 0){
 				for (Prd prd : prdList){
-					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+					log(website.getId() + "   scrapPrd(" + prd.getPrdNo() + ")", "Start DTL scrap : " + prd.getPrdUrl());
 					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+					log(website.getId() + "   scrapPrd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
 					for (PrdDtl prdDtl : prdDtlList){
 						mergePrdDtl(this.conn, prdDtl);
-=======
-			for(ScrapItem scItem : scItemList){
-				ArrayList<Website> websiteList = sc.getWebsite(scItem);
-				
-				for(Website website : websiteList){
-					log(website.getId(), "Process Start!!");
-					
-					Calendar tempC = Calendar.getInstance();
-					tempC.add(Calendar.MONTH, scrapMonth);
-					String toMonth = String.format("%04d", tempC.get(Calendar.YEAR)) + String.format("%02d", tempC.get(Calendar.MONTH) + 1);
-					HashMap<String, String> options = new HashMap<String, String>();
-					options.put("until", toMonth);
-					
-					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
-					CloseableHttpClient httpclient = HttpClients.createDefault();
-					
-					ArrayList<Prd> insPrds = se.getInsPrds(conn, website.getId());
-					HashSet<String> insPrdNoSet = new HashSet<String>();
-					for (Prd prd : insPrds){
-						insPrdNoSet.add(prd.getPrdNo());
-					}
-					
-					ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
-					
-					int prdCnt = 0;
-					if (prdList != null && prdList.size() > 0){
-						for (Prd prd : prdList){
-							if (prd == null) continue;
-							se.insertPrd(conn, prd);
-							prdCnt++;
-						}
-					}
-					
-					if (prdList != null && prdList.size() > 0){
-						for (Prd prd : prdList){
-							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
-							ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-							log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
-							for (PrdDtl prdDtl : prdDtlList){
-								se.mergePrdDtl(conn, prdDtl);
-							}
-						}
->>>>>>> aadd559723496dd22f8485c0e2b50c83045d9ebd:tourtobee-scrapper/src/hnc/tourtobee/ScrappingEngine.java
 					}
 				}
 			}
-			
+
 			log(website.getId() + " scrapPrd Finish ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 		} catch (SQLException e) {
 			log(this.getClass().getName() + "-scrapPrd", e.toString());
@@ -386,9 +344,9 @@ public class ScrappingEngine {
 			
 			if (insPrds != null && insPrds.size() > 0){
 				for (Prd prd : insPrds){
-					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+					log(website.getId() + "   scrapDtlSummary(" + prd.getPrdNo() + ")", "Start DTL scrap");
 					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+					log(website.getId() + "   scrapDtlSummary(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
 					for (PrdDtl prdDtl : prdDtlList){
 						mergePrdDtl(this.conn, prdDtl);
 					}
@@ -399,8 +357,4 @@ public class ScrappingEngine {
 			log(this.getClass().getName() + "-scrapDtlSummary", e.toString());
 		}
 	}
-	
-	
-	
-	
 }

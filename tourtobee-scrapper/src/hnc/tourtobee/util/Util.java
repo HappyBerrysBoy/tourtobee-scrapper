@@ -2,6 +2,9 @@ package hnc.tourtobee.util;
 
 import static hnc.tourtobee.util.Util.getSystemDate;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashSet;
 
@@ -167,6 +170,21 @@ public class Util {
 				+ ":" + String.format("%02d", c.get(Calendar.SECOND));
 		
 		System.out.println("[" + now + "]" + title + " : " + content);
+		
+		try {
+		      ////////////////////////////////////////////////////////////////
+			  BufferedWriter out = new BufferedWriter(new FileWriter("log.txt",true));
+		      String s = "[" + now + "]" + title + " : " + content;
+
+		      out.append(s);
+		      out.newLine();
+
+		      out.close();
+		      ////////////////////////////////////////////////////////////////
+		    } catch (IOException e) {
+		        System.err.println(e); // 에러가 있다면 메시지 출력
+		        System.exit(1);
+		    }
 	}
 	
 	

@@ -306,16 +306,16 @@ public class ScrappingEngine {
 				}
 			}
 			
-			if (prdList != null && prdList.size() > 0){
-				for (Prd prd : prdList){
-					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
-					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
-					for (PrdDtl prdDtl : prdDtlList){
-						mergePrdDtl(this.conn, prdDtl);
-					}
-				}
-			}
+//			if (prdList != null && prdList.size() > 0){
+//				for (Prd prd : prdList){
+//					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+//					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
+//					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+//					for (PrdDtl prdDtl : prdDtlList){
+//						mergePrdDtl(this.conn, prdDtl);
+//					}
+//				}
+//			}
 			
 			log(website.getId() + " scrapPrd Finish ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 		} catch (SQLException e) {

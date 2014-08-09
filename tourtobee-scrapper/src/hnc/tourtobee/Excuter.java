@@ -45,7 +45,7 @@ public class Excuter {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					if (!website.getId().equals("hanatour")) continue;
+					if (!website.getId().equals("KRT")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();

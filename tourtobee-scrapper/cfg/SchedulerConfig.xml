@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <scheduler>
-	<no-threads>2</no-threads>
+	<no-threads>4</no-threads>
 	<scrap-period>6</scrap-period>
-	<scrap-schedule>0 31 12 * * ?</scrap-schedule>
+	<scrap-schedule>0 27 20 * * ?</scrap-schedule>
 	<prddtl-summary-period>3</prddtl-summary-period>
 	<prddtl-summary-schedule></prddtl-summary-schedule>
 </scheduler>

@@ -26,46 +26,49 @@ public class HanjinHandler extends _TouristAgencyHandler {
 		ArrayList<Menu> menuList = getMenuUrlList(website, html.removeComment().getValueByClass("mainNavitopd").toString());
 		
 		for (Menu menu : menuList){
-			log(website.getId() + " - Get Menu", menu.getMenuName());
-			Website menuSite = new Website();
-			menuSite.setId(website.getId());
-			menuSite.setName(website.getName());
-			menuSite.setUrl(menu.getMenuUrl());
-			menuSite.setMethod(website.getMethod());
-			menuSite.setEncoding(website.getEncoding());
-			
-			Html menuHtml = new Html(this.getHtml(httpclient, menuSite));
-			String depArpt = menuHtml.getValueByClass("shotTitle1").removeAllTags().toString();
-			if (depArpt.contains("부산")){
-				depArpt = "부산";
-			}else if (depArpt.contains("청주")){
-				depArpt = menu.getMenuName().trim().substring(0, 2);
-			}else{
-				depArpt = "인천";
-			}
-			menuHtml = menuHtml.getTag("xml").getTag("product");
-			int prdCnt = 0;
-			while(menuHtml.getTag("item").toString().length() > 0){
-				Html prdHtml = menuHtml.getTag("item");
-				menuHtml = menuHtml.removeTag("item");
+			try{
+				Website menuSite = new Website();
+				menuSite.setId(website.getId());
+				menuSite.setName(website.getName());
+				menuSite.setUrl(menu.getMenuUrl());
+				menuSite.setMethod(website.getMethod());
+				menuSite.setEncoding(website.getEncoding());
 				
-				Prd prd = new Prd();
-				prd.setTagnId(website.getId());
-				prd.setPrdNo(prdHtml.getTag("PRODUCT_CODE").removeAllTags().toString());
-				prd.setPrdNm(prdHtml.getTag("PRODUCT_NAME").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PRODUCT_NAME>", ""));
-				prd.setTrDiv(menu.getMenuCode());
-				prd.setDmstDiv("A");
-				prd.setPrdDesc(prdHtml.getTag("PROINTRODUCE").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PROINTRODUCE>", ""));
-				prd.setAreaList(this.getAreaList(prd.getPrdNm() + " " + prd.getPrdDesc(), menu.getMenuName()));
-				prd.setDepArpt(ARPT_NAME_CODE.get(depArpt));
-				
-				if (insPrds == null || !insPrds.contains(prd.getPrdNo())){
-					prdList.add(prd);
-					prdCnt++;
+				Html menuHtml = new Html(this.getHtml(httpclient, menuSite));
+				String depArpt = menuHtml.getValueByClass("shotTitle1").removeAllTags().toString();
+				if (depArpt.contains("부산")){
+					depArpt = "부산";
+				}else if (depArpt.contains("청주")){
+					depArpt = menu.getMenuName().trim().substring(0, 2);
+				}else{
+					depArpt = "인천";
 				}
-				
+				menuHtml = menuHtml.getTag("xml").getTag("product");
+				int prdCnt = 0;
+				while(menuHtml.getTag("item").toString().length() > 0){
+					Html prdHtml = menuHtml.getTag("item");
+					menuHtml = menuHtml.removeTag("item");
+					
+					Prd prd = new Prd();
+					prd.setTagnId(website.getId());
+					prd.setPrdNo(prdHtml.getTag("PRODUCT_CODE").removeAllTags().toString());
+					prd.setPrdNm(prdHtml.getTag("PRODUCT_NAME").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PRODUCT_NAME>", ""));
+					prd.setTrDiv(menu.getMenuCode());
+					prd.setDmstDiv("A");
+					prd.setPrdDesc(prdHtml.getTag("PROINTRODUCE").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PROINTRODUCE>", ""));
+					prd.setAreaList(this.getAreaList(prd.getPrdNm() + " " + prd.getPrdDesc(), menu.getMenuName()));
+					prd.setDepArpt(ARPT_NAME_CODE.get(depArpt));
+					
+					if (insPrds == null || !insPrds.contains(prd.getPrdNo())){
+						prdList.add(prd);
+						prdCnt++;
+					}
+					
+				}
+			}catch(Exception e){
+				log(this.getClass().getName() + "-scrapPrdList", "(" + menu.getMenuUrl() + ")" + e.toString());
 			}
-			log("  Prd Scrapping", String.valueOf(prdCnt) + " Prds Scrapped");
+			
 		}
 		return prdList;
 	}
@@ -189,7 +192,7 @@ public class HanjinHandler extends _TouristAgencyHandler {
 				}
 			}
 		}catch(Exception e){
-			log("scrapPrdDtlSmmry", e.toString());
+			log(this.getClass().getName() + "-scrapPrdDtlSmmry", "(" + prd.getPrdNo() + ")" + e.toString());
 		}
 		
 		return prdDtlList;

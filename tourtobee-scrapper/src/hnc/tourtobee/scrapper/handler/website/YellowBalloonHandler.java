@@ -1,21 +1,14 @@
 package hnc.tourtobee.scrapper.handler.website;
 
-import static hnc.tourtobee.code.Codes.ARPT_NAME_CODE;
-import static hnc.tourtobee.code.Codes.PRD_CLASS;
 import static hnc.tourtobee.code.Codes.PRD_STATUS;
-import static hnc.tourtobee.code.Codes.WEEK_DAY_NUMBER;
 import static hnc.tourtobee.util.Util.log;
 import hnc.tourtobee.scrapper.dataobject.Prd;
 import hnc.tourtobee.scrapper.dataobject.PrdDtl;
-import hnc.tourtobee.scrapper.dataobject.TtrTrArea;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -30,7 +23,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
 
 public class YellowBalloonHandler extends _TouristAgencyHandler {
@@ -171,7 +163,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 						//System.out.println(prdHtml.toString());
 						
 						if (!menu.equals("A03") && !menu.equals("A06")){
-							log("  Prd Scrapping", "Menu " + urlMap.get(menu) + " Scrapping");
+							log(website.getId() + " - Prd Scrapping", "Menu " + urlMap.get(menu) + " Scrapping");
 							while(prdHtml.getValueByClass("travelList_wrap").toString().contains("travelList_wrap")){
 								Html prdDtlHtml = prdHtml.getValueByClass("travelList_wrap");
 								
@@ -209,7 +201,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 //									System.out.println(t.getSiteCd());
 //								}
 							}
-							log("  Prd Scrapping", String.valueOf(prdList.size()) + " Prds Scrapped");
+//							log(website.getId() + " - Prd Scrapping", String.valueOf(prdList.size()) + " Prds Scrapped");
 						}else{
 							
 						}
@@ -290,7 +282,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 				//break;
 			}
 		}catch(Exception e){
-			log("scrapPrdDtlSmmry", e.toString());
+			log(this.getClass().getName() + "-scrapPrdDtlSmmry", e.toString());
 		}
 		
 		return prdDtlList;

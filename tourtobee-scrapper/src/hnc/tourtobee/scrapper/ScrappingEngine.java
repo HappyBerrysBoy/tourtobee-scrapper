@@ -68,6 +68,7 @@ public class ScrappingEngine {
 						+ " FROM T_PRD"
 						+ " WHERE TAGN_ID = ?"
 //						+ "   AND PRD_NO NOT IN (SELECT distinct PRD_NO FROM T_PRD_DTL WHERE TAGN_ID = ?)"
+//						+ "   AND PRD_NO = 'JSC501'"
 						;
 			PreparedStatement pstmt = conn.prepareStatement(query);
 			pstmt.setString(1, tagnId);
@@ -287,13 +288,14 @@ public class ScrappingEngine {
 	public void scrapPrd(Website website, HashMap<String, String> options){
 		_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
+		ArrayList<Prd> prdList = new ArrayList<Prd>();
 		
 		try {
 			if (!this.conn.isValid(10)) initConn();
 			
 			log(website.getId() + " scrapPrd Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 			
-			ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
+			prdList = handler.scrapPrdList(httpclient, website, options, null);
 			log(website.getId() + " Scrap Prd ", prdList.size() + " Prds");
 			
 			int prdCnt = 0;
@@ -302,13 +304,13 @@ public class ScrappingEngine {
 					if (prd == null) continue;
 					mergePrd(this.conn, prd);
 					prdCnt++;
-					log(website.getId() + " Merge Prd ", prd.getPrdNo() + " (" + prdCnt + "/" + prdList.size() + ")");
+//					log(website.getId() + " Merge Prd ", prd.getPrdNo() + " (" + prdCnt + "/" + prdList.size() + ")");
 				}
 			}
 			
 			if (prdList != null && prdList.size() > 0){
 				for (Prd prd : prdList){
-					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
+//					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
 					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
 					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
 					for (PrdDtl prdDtl : prdDtlList){

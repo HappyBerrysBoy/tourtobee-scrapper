@@ -3,13 +3,10 @@ package hnc.tourtobee.scrapper.handler.website;
 import hnc.tourtobee.scrapper.dataobject.Menu;
 import hnc.tourtobee.scrapper.dataobject.Prd;
 import hnc.tourtobee.scrapper.dataobject.PrdDtl;
-import hnc.tourtobee.scrapper.dataobject.TtrTrArea;
-import hnc.tourtobee.util.Util;
 import static hnc.tourtobee.code.Codes.PRD_CLASS;
 import static hnc.tourtobee.code.Codes.WEEK_DAY_NUMBER;
 import static hnc.tourtobee.code.Codes.PRD_STATUS;
 import static hnc.tourtobee.code.Codes.ARPT_NAME_CODE;
-import static hnc.tourtobee.code.Codes.findGetAreaString;
 import static hnc.tourtobee.util.Util.getSystemMonth;
 import static hnc.tourtobee.util.Util.log;
 
@@ -17,7 +14,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -61,17 +57,20 @@ public class KRTHandler extends _TouristAgencyHandler{
 //				prdList.add(prd);
 //			}
 //		}
-		try{
-			ArrayList<JsonMenu> jsonMenuList = getMenuUrls(this.getHtml(httpclient, website));
-			
-			for (JsonMenu jsonMenu : jsonMenuList){
+		ArrayList<JsonMenu> jsonMenuList = new ArrayList<KRTHandler.JsonMenu>();
+		try {
+			jsonMenuList = getMenuUrls(this.getHtml(httpclient, website));
+		} catch (IOException e1) {}
+		
+		for (JsonMenu jsonMenu : jsonMenuList){
+			try{
 				String menuUrl = jsonMenu.mLink;
 				Website menuSite = new Website();
 				menuSite.setUrl(menuUrl);
 				menuSite.setMethod(website.getMethod());
 				menuSite.setEncoding(website.getEncoding());
 				
-				log(website.getId() + " - Get Menu", jsonMenu.mMenu);
+//				log(website.getId() + " - Get Menu", jsonMenu.mMenu);
 				Html menuHtml = new Html(this.getHtml(httpclient, menuSite));
 				//허니문은 구조가 다름
 				if (jsonMenu.mD1code.equals("G3")){
@@ -91,7 +90,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 						String prdNo = url.split("good_cd=")[1].split("&")[0];
 						String prdNm = prdHtml.removeTag("div").getTag("div").getTag("table").removeTag("tr").removeTag("tr").getTag("tr").removeAllTags().toString().trim();
 						String prdDesc = prdHtml.removeTag("div").getTag("div").getTag("table").removeTag("tr").removeTag("tr").removeTag("tr").getTag("tr").removeAllTags().toString().trim();
-
+	
 						
 						Prd prd = new Prd();
 						prd.setTagnId(website.getId());
@@ -135,7 +134,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 					prdListHtml = prdListHtml.removeTag("div").removeTag("div").getTag("div")
 											.removeTag("td").removeTag("td").removeTag("td").getTag("td")
 											.removeTag("table").getTag("table");
-
+	
 					Html prdHtml = new Html("");
 					
 					while ((prdHtml = prdListHtml.getTag("tr")).toString().length() > 0){
@@ -187,10 +186,11 @@ public class KRTHandler extends _TouristAgencyHandler{
 						prdList.add(prd);
 					}
 				}
-				
+			
+			}catch(Exception e){
+				log(this.getClass().getName() + " - scrapPrdList", "(" + jsonMenu.mLink + ")" + e.toString());
 			}
-		}catch(Exception e){
-			log(this.getClass().getName() + " - scrapPrdList", e.toString());
+			
 		}
 		
 		
@@ -207,27 +207,29 @@ public class KRTHandler extends _TouristAgencyHandler{
 		HashSet<String> monthSet = this.getMonthSet(options);
 		
 		ArrayList<PrdDtl> prdDtlList = new ArrayList<PrdDtl>();
-		try{
-			for (String month : monthSet){
-				String prtType = prd.getPrdUrl().split("/")[prd.getPrdUrl().split("/").length - 1].split("_")[0];
 	
-				String prdDtlListUrl = "http://www.krt.co.kr/_inc2014/_StartList.asp?"
-								+ "param1=" + prd.getPrdNo()
-								+ "&param2=" + month
-								+ "&param3=" + getSystemMonth()
-								+ "&param4=" + prtType
-								+ "&param5=0"
-								+ "&param6=" + getSystemMonth();
-				Website prdDtlListSite = new Website();
-				prdDtlListSite.setUrl(prdDtlListUrl);
-				prdDtlListSite.setMethod("GET");
-				prdDtlListSite.setEncoding(website.getEncoding());
-				
-				Html prdDtlListHtml = new Html(this.getHtml(httpclient, prdDtlListSite));
-				prdDtlListHtml = prdDtlListHtml.getTag("div").getTag("table");
-				prdDtlListHtml = new Html(prdDtlListHtml.toString().substring(1));
-				
-				while (true){
+		for (String month : monthSet){
+			
+			String prtType = prd.getPrdUrl().split("/")[prd.getPrdUrl().split("/").length - 1].split("_")[0];
+
+			String prdDtlListUrl = "http://www.krt.co.kr/_inc2014/_StartList.asp?"
+							+ "param1=" + prd.getPrdNo()
+							+ "&param2=" + month
+							+ "&param3=" + getSystemMonth()
+							+ "&param4=" + prtType
+							+ "&param5=0"
+							+ "&param6=" + getSystemMonth();
+			Website prdDtlListSite = new Website();
+			prdDtlListSite.setUrl(prdDtlListUrl);
+			prdDtlListSite.setMethod("GET");
+			prdDtlListSite.setEncoding(website.getEncoding());
+			
+			Html prdDtlListHtml = new Html(this.getHtml(httpclient, prdDtlListSite));
+			prdDtlListHtml = prdDtlListHtml.getTag("div").getTag("table");
+			prdDtlListHtml = new Html(prdDtlListHtml.toString().substring(1));
+			
+			while (true){
+				try{
 					String subHtmlStr = prdDtlListHtml.getTag("table").toString();
 					
 					if (subHtmlStr.trim().length() <= 0) break;
@@ -288,12 +290,13 @@ public class KRTHandler extends _TouristAgencyHandler{
 					prdDtl.setDepArpt(prd.getDepArpt());
 					
 					prdDtlList.add(prdDtl);
+				}catch(Exception e){
+					log(this.getClass().getName() + "-scrapPrdDtlSmmry", "(" + prd.getPrdNo() + ")" + e.toString());
 				}
-				
 			}
-		}catch(Exception e){
-			log("scrapPrdDtlSmmry", e.toString());
+			
 		}
+	
 		return prdDtlList;
 	}
 
@@ -336,7 +339,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 				subSite.setMethod(website.getMethod());
 				subSite.setEncoding(website.getEncoding());
 				
-				log(website.getId() + " - Get Menu", jsonMenu.mMenu);
+//				log(website.getId() + " - Get Menu", jsonMenu.mMenu);
 				
 				for (String prdUrl : getPrdUrls(this.getHtml(httpclient, subSite))){
 					prdUrls.add(prdUrl);
@@ -352,7 +355,7 @@ public class KRTHandler extends _TouristAgencyHandler{
 				menuList.add(menu);
 			}
 		}catch(Exception e){
-			log("scrapMenu", e.toString());
+			log(this.getClass().getName() + "-scrapMenu", e.toString());
 		}
 		
 		return menuList;

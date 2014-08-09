@@ -45,7 +45,7 @@ public class Excuter {
 				ArrayList<Website> websiteList = sc.getWebsite(scItem);
 				
 				for(Website website : websiteList){
-					if (!website.getId().equals("KRT")) continue;
+					if (!website.getId().equals("hanatour")) continue;
 					log(website.getId(), "Process Start!!");
 					
 					Calendar tempC = Calendar.getInstance();
@@ -54,7 +54,8 @@ public class Excuter {
 					HashMap<String, String> options = new HashMap<String, String>();
 					options.put("until", toMonth);
 					
-					se.scrapPrd(website, options);
+//					se.scrapPrd(website, options);
+					se.scrapDtlSummary(website, options);
 					
 //					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 //					CloseableHttpClient httpclient = HttpClients.createDefault();

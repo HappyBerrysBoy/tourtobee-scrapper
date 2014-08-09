@@ -65,7 +65,6 @@ public class KRTHandler extends _TouristAgencyHandler{
 			ArrayList<JsonMenu> jsonMenuList = getMenuUrls(this.getHtml(httpclient, website));
 			
 			for (JsonMenu jsonMenu : jsonMenuList){
-				if (!jsonMenu.mMenu.equals("파타야")) continue;
 				String menuUrl = jsonMenu.mLink;
 				Website menuSite = new Website();
 				menuSite.setUrl(menuUrl);

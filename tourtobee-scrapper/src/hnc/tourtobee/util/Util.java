@@ -5,8 +5,14 @@ import static hnc.tourtobee.util.Util.getSystemDate;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
+
+import sun.org.mozilla.javascript.internal.json.JsonParser.ParseException;
 
 public class Util {
 	
@@ -226,5 +232,21 @@ public class Util {
 //		regex = regex.replaceAll("\\}", "\\}");
 //		regex = regex.replaceAll("\\/", "\\/");
 		return regex;
+	}
+	
+	
+	public static String setOperationDate(String inputDate, int value){
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+		Date date = null;
+		try{
+			date = dateFormat.parse(inputDate);
+		}catch(java.text.ParseException e){
+			e.printStackTrace();
+		}
+		
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		cal.add(Calendar.DATE, value);
+		return dateFormat.format(cal.getTime());
 	}
 }

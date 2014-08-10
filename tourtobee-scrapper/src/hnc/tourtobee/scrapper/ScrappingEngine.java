@@ -295,6 +295,7 @@ public class ScrappingEngine {
 
 			log(website.getId() + " scrapPrd Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 
+			httpclient = HttpClients.createDefault();
 			ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
 			log(website.getId() + " Scrap Prd ", prdList.size() + " Prds");
 
@@ -308,9 +309,12 @@ public class ScrappingEngine {
 				}
 			}
 
+			prdCnt = 0;
 			if (prdList != null && prdList.size() > 0){
 				for (Prd prd : prdList){
-					log(website.getId() + "   scrapPrd(" + prd.getPrdNo() + ")", "Start DTL scrap : " + prd.getPrdUrl());
+					log(website.getId() + "   scrapPrd(" + prd.getPrdNo() + ")" + " (" + prdCnt + "/" + prdList.size() + ")", "Start DTL scrap : " + prd.getPrdUrl());
+					prdCnt++;
+					httpclient = HttpClients.createDefault();
 					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
 					log(website.getId() + "   scrapPrd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
 					for (PrdDtl prdDtl : prdDtlList){

@@ -4,6 +4,7 @@ import static hnc.tourtobee.code.Codes.PRD_STATUS;
 import static hnc.tourtobee.util.Util.log;
 import hnc.tourtobee.scrapper.dataobject.Prd;
 import hnc.tourtobee.scrapper.dataobject.PrdDtl;
+import hnc.tourtobee.util.Util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +27,8 @@ import org.w3c.dom.NodeList;
 
 
 public class YellowBalloonHandler extends _TouristAgencyHandler {
+	
+	private String logFilename = "";
 	
 	class Submenu{
 		private String code;
@@ -111,6 +114,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 	public ArrayList<Prd> scrapPrdList(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, HashSet<String> insPrds) {
 		
 		ArrayList<Prd> prdList = new ArrayList<Prd>();
+		logFilename = "log_" + website.getId() + "_" + Util.getSystemDateTime() + ".txt";
 		
 		try{
 			// XML Document 객체 생성
@@ -184,9 +188,10 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 //							prdUrl = "http://www.ybtour.co.kr/Goods/Overseas/list.asp?sub_area_cd=K803";
 							Website prdSite = new Website();
 							prdSite.setUrl(prdUrl);
+							log("prdUrl : ", prdUrl, logFilename);
 							prdSite.setMethod("GET");
 							prdSite.setEncoding(website.getEncoding());
-							log(website.getId() + " - Product Url", prdUrl);
+							log(website.getId() + " - Product Url", prdUrl, logFilename);
 							
 							Html prdHtml = new Html(this.getHtml(httpclient, prdSite));
 							prdHtml = prdHtml.getValueByClass("travel_top_section");
@@ -197,7 +202,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 							//System.out.println(prdHtml.toString());
 							
 							// 자유여행, 허니문의 경우 양식이 다르다..
-							log("  Prd Scrapping", "Menu " + urlMap.get(menu) + " Scrapping");
+							log("  Prd Scrapping", "Menu " + urlMap.get(menu) + " Scrapping", logFilename);
 							while(prdHtml.getValueByClass("travelList_wrap").toString().contains("travelList_wrap")){
 								try{
 									Html prdDtlHtml = prdHtml.getValueByClass("travelList_wrap");
@@ -234,12 +239,12 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 									prd.setPrdUrl(prdDetailUrl);
 									prdList.add(prd);
 								}catch(Exception e){
-									log("Prd Detail Parcing Exception : ", e.getStackTrace()[0].toString());
+									log("Prd Detail Parcing Exception : ", e.getStackTrace()[0].toString(), logFilename);
 								}
 							}
-							log("  Prd Scrapping", String.valueOf(prdList.size()) + " Prds Scrapped");
+							log("  Prd Scrapping", String.valueOf(prdList.size()) + " Prds Scrapped", logFilename);
 						}catch(Exception e){
-							log("Prd Menu Parcing Exception : ", e.getStackTrace()[0].toString());
+							log("Prd Menu Parcing Exception : ", e.getStackTrace()[0].toString(), logFilename);
 						}
 						break;
 					}
@@ -249,7 +254,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 			}
 		}catch(Exception e){
 			e.printStackTrace();
-			log(this.getClass().getName() + " - scrapPrdList", e.toString());
+			log(this.getClass().getName() + " - scrapPrdList", e.toString(), logFilename);
 		}
 		return prdList;
 	}
@@ -268,6 +273,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 					
 					Website prdDtlListSite = new Website();
 					prdDtlListSite.setUrl(prdDtlSummaryUrl);
+					log("prdDtlUrl : ", prdDtlSummaryUrl, logFilename);
 					prdDtlListSite.setMethod("GET");
 					prdDtlListSite.setEncoding(website.getEncoding());
 					
@@ -318,7 +324,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 							
 							prdDtlList.add(dtl);
 						}catch(Exception e){
-							log("PrdDtl Parcing Exception : ", e.getStackTrace()[0].toString());
+							log("PrdDtl Parcing Exception : ", e.getStackTrace()[0].toString(), logFilename);
 						}
 					}
 //					break;
@@ -328,6 +334,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 					
 					Website prdDtlListSite = new Website();
 					prdDtlListSite.setUrl(prdDtlSummaryUrl);
+					log("prdDtlUrl : ", prdDtlSummaryUrl, logFilename);
 					prdDtlListSite.setMethod("GET");
 					prdDtlListSite.setEncoding(website.getEncoding());
 					
@@ -368,7 +375,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 							
 	//						break;
 						}catch(Exception e){
-							log("PrdDtl Parcing Exception : ", e.getStackTrace()[0].toString());
+							log("PrdDtl Parcing Exception : ", e.getStackTrace()[0].toString(), logFilename);
 						}
 					}
 					
@@ -378,7 +385,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 				}
 			}
 		}catch(Exception e){
-			log("scrapPrdDtlSmmry", e.toString());
+			log("scrapPrdDtlSmmry", e.toString(), logFilename);
 		}
 		
 		return prdDtlList;
@@ -391,6 +398,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 				
 				Website prdDtlDayListSite = new Website();
 				prdDtlDayListSite.setUrl(prdDtlUrl);
+				log("prdDtlDayListUrl : ", prdDtlUrl, logFilename);
 				prdDtlDayListSite.setMethod("GET");
 				prdDtlDayListSite.setEncoding(website.getEncoding());
 				
@@ -456,7 +464,7 @@ public class YellowBalloonHandler extends _TouristAgencyHandler {
 					}
 				}
 			}catch(Exception e){
-				log("getPrdDtlList Exception : ", e.getStackTrace()[0].toString());
+				log("getPrdDtlList Exception : ", e.getStackTrace()[0].toString(), logFilename);
 			}
 		}
 	}

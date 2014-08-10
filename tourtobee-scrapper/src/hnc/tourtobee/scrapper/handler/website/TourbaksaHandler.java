@@ -113,6 +113,10 @@ public class TourbaksaHandler extends _TouristAgencyHandler{
 			mainPage.setMethod("GET");
 			mainPage.setEncoding(website.getEncoding());
 			
+			List<String> prdCodeList = new ArrayList<String>();
+			
+			int prdCnt = 0;
+			
 			Html mainHtml = new Html(this.getHtml(httpclient, mainPage));
 			Html icnDepHtml = mainHtml.getValueById("city1").removeComment();
 			Html pusDepHtml = mainHtml.getValueById("city2").removeComment();
@@ -126,6 +130,7 @@ public class TourbaksaHandler extends _TouristAgencyHandler{
 			for(MenuList menu : menuList){
 				for(SubMenuList submenu : menu.submenuList){
 					Website subPage = new Website();
+					System.out.println("SubMenu Url : " + submenu.getUrl());
 					subPage.setUrl(submenu.getUrl());
 					subPage.setMethod("GET");
 					subPage.setEncoding(website.getEncoding());
@@ -148,7 +153,8 @@ public class TourbaksaHandler extends _TouristAgencyHandler{
 						if(regionHtml.getTag("ul").toString().equals("")){
 							CityMenu cityMenu = new CityMenu();
 							cityMenu.setCity(regionHtml.removeAllTags().toString().trim());
-							cityMenu.setUrl(defaultUrl + regionHtml.findRegex("href=['\"][^\"]+").toString().replace("href=\'", ""));
+							cityMenu.setUrl(defaultUrl + regionHtml.findRegex("href=[\'\"]+[^\'\"]+").findRegex("href=[\'\"]").toString().replace("href=\'", ""));
+//																			   "href=[\'\"]+[^\'\"]+"
 							cityMenu.setDepCity(menu.getDepCity());
 							cityMenuList.add(cityMenu);
 						}else{
@@ -164,7 +170,7 @@ public class TourbaksaHandler extends _TouristAgencyHandler{
 										
 										String replaceStr = detailCity2.findRegex("href=['\'][^\']+").toString();
 										cityMenu.setCity(detailCity2.toString().replace(replaceStr, ""));
-										cityMenu.setUrl(defaultUrl + detailCity2.findRegex("href=['\'][^\']+").toString().replace("href=\'", ""));
+										cityMenu.setUrl(defaultUrl + detailCity2.findRegex("href=[\'\"]+[^\'\"]+").toString().replace("href=\'", ""));
 										cityMenu.setDepCity(menu.getDepCity());
 										cityMenuList.add(cityMenu);
 									}
@@ -172,7 +178,7 @@ public class TourbaksaHandler extends _TouristAgencyHandler{
 									CityMenu cityMenu = new CityMenu();
 									String replaceStr = detailCity.findRegex("href=['\'][^\']+").toString();
 									cityMenu.setCity(detailCity.toString().replace(replaceStr, ""));
-									cityMenu.setUrl(defaultUrl + detailCity.findRegex("href=['\'][^\']+").toString().replace("href=\'", ""));
+									cityMenu.setUrl(defaultUrl + detailCity.findRegex("href=[\'\"]+[^\'\"]+").toString().replace("href=\'", ""));
 									cityMenu.setDepCity(menu.getDepCity());
 									cityMenuList.add(cityMenu);
 								}
@@ -180,57 +186,70 @@ public class TourbaksaHandler extends _TouristAgencyHandler{
 						}
 					}
 					
+					prdCnt += cityMenuList.size();
+					
 					for(CityMenu city : cityMenuList){
-						Website prdPage = new Website();
-						prdPage.setUrl(city.getUrl());
-						prdPage.setMethod("GET");
-						prdPage.setEncoding(website.getEncoding());
-						
-						Html prdHtml = new Html(this.getHtml(httpclient, prdPage));
-						prdHtml = prdHtml.getValueByClass("list");
-						
-						while(!prdHtml.getValueByClass("itemList").toString().trim().equals("")){
-							Html prdListHtml = prdHtml.getValueByClass("itemList");
-							prdHtml = prdHtml.removeValueByClass("itemList");
+						try{
+							Website prdPage = new Website();
+							System.out.println("City Url : " + city.getUrl());
+							prdPage.setUrl(city.getUrl());
+							prdPage.setMethod("GET");
+							prdPage.setEncoding(website.getEncoding());
 							
-							while(!prdListHtml.getTag("li").toString().trim().equals("")){
-								Html prdDtlHtml = prdListHtml.getTag("li").removeComment();
-								prdListHtml = prdListHtml.removeTag("li");
+							Html prdHtml = new Html(this.getHtml(httpclient, prdPage));
+							prdHtml = prdHtml.getValueByClass("list");
+							
+							while(!prdHtml.getValueByClass("itemList").toString().trim().equals("")){
+								Html prdListHtml = prdHtml.getValueByClass("itemList");
+								prdHtml = prdHtml.removeValueByClass("itemList");
 								
-								Prd prd = new Prd();
-								prd.setTagnId(website.getId());
-//								System.out.println(prdDtlHtml.getTag("h4").removeAllTags().toString().trim());						// prdnm
-								String prdnm = prdDtlHtml.getTag("h4").removeAllTags().toString().trim();
-								String prddesc = prdDtlHtml.getValueByClass("note").removeAllTags().toString().trim();
-								prd.setPrdNm(prdnm);
-//								System.out.println(prdDtlHtml.getValueByClass("note").removeAllTags().toString().trim());			// prddesc
-								prd.setPrdDesc(prddesc);
-//								System.out.println(prdDtlHtml.getTag("span").removeAllTags().toString().split("박")[0].trim());		// night
-								prd.setNight(prdDtlHtml.getTag("span").removeAllTags().toString().split("박")[0].trim());
-//								System.out.println(prdDtlHtml.getTag("span").removeAllTags().toString().split("박")[1].split("일")[0].trim());		// trterm
-								prd.setTrterm(prdDtlHtml.getTag("span").removeAllTags().toString().split("박")[1].split("일")[0].trim());
-								String airIdx = prdDtlHtml.getValueByClass("detail liner").toString();
-								if(airIdx.indexOf(".gif") > -1){
-//									System.out.println(airIdx.substring(airIdx.indexOf(".gif") - 2, airIdx.indexOf(".gif")));		// aircode
-									prd.setAircode(airIdx.substring(airIdx.indexOf(".gif") - 2, airIdx.indexOf(".gif")));
+								while(!prdListHtml.getTag("li").toString().trim().equals("")){
+									try{
+										Html prdDtlHtml = prdListHtml.getTag("li").removeComment();
+										prdListHtml = prdListHtml.removeTag("li");
+										String prdno = prdDtlHtml.getValueByClass("itemNum detail").removeAllTags().toString().trim();
+										if(prdCodeList.contains(prdno))
+											continue;
+										
+										Prd prd = new Prd();
+										prd.setTagnId(website.getId());
+										prd.setPrdNo(prdno);
+		//								System.out.println(prdDtlHtml.getTag("h4").removeAllTags().toString().trim());						// prdnm
+										String prdnm = prdDtlHtml.getTag("h4").removeAllTags().toString().trim();
+										String prddesc = prdDtlHtml.getValueByClass("note").removeAllTags().toString().trim();
+										prd.setPrdNm(prdnm);
+		//								System.out.println(prdDtlHtml.getValueByClass("note").removeAllTags().toString().trim());			// prddesc
+										prd.setPrdDesc(prddesc);
+		//								System.out.println(prdDtlHtml.getTag("span").removeAllTags().toString().split("박")[0].trim());		// night
+										prd.setNight(prdDtlHtml.getTag("span").removeAllTags().toString().split("박")[0].trim());
+		//								System.out.println(prdDtlHtml.getTag("span").removeAllTags().toString().split("박")[1].split("일")[0].trim());		// trterm
+										prd.setTrterm(prdDtlHtml.getTag("span").removeAllTags().toString().split("박")[1].split("일")[0].trim());
+										String airIdx = prdDtlHtml.getValueByClass("detail liner").toString();
+										if(airIdx.indexOf(".gif") > -1){
+		//									System.out.println(airIdx.substring(airIdx.indexOf(".gif") - 2, airIdx.indexOf(".gif")));		// aircode
+											prd.setAircode(airIdx.substring(airIdx.indexOf(".gif") - 2, airIdx.indexOf(".gif")));
+										}
+										String prdUrl = defaultUrl + "/xml/item_Index_List.asp?gy=" + prdno.substring(0, 4) + "&gs=" + prdno.substring(4).split("-")[0] 
+															+ "&AirIDX=" + prdno.split("-")[1] + "&sd=thismonth01&" + city.getUrl().split("\\?")[1];		// 나중에 thismonth를 month로 치환해서 사용..
+//										System.out.println(prdUrl);
+										prd.setPrdUrl(prdUrl);
+										prd.setAreaList(this.getAreaList(prdnm + " " + prddesc, city.getCity()));
+										prd.setTrDiv(tourkind.get(menu.getTourkind()));
+										if(prd.getTrDiv().equals("D"))
+											prd.setDmstDiv("D");
+										else
+											prd.setDmstDiv("A");
+										prd.setDepArpt(city.getDepCity());
+										prdList.add(prd);
+		//								break;
+									}catch(Exception e){
+										log("Get Prd Exception : ", e.getStackTrace()[0].toString());
+									}
 								}
-								String prdno = prdDtlHtml.getValueByClass("itemNum detail").removeAllTags().toString().trim();
-								prd.setPrdNo(prdno);
-								String prdUrl = defaultUrl + "/xml/item_Index_List.asp?gy=" + prdno.substring(0, 4) + "&gs=" + prdno.substring(4).split("-")[0] 
-													+ "&AirIDX=" + prdno.split("-")[1] + "&sd=thismonth01&" + city.getUrl().split("\\?")[1];		// 나중에 thismonth를 month로 치환해서 사용..
-								System.out.println(prdUrl);
-								prd.setPrdUrl(prdUrl);
-								prd.setAreaList(this.getAreaList(prdnm + " " + prddesc, city.getCity()));
-								prd.setTrDiv(tourkind.get(menu.getTourkind()));
-								if(prd.getTrDiv().equals("D"))
-									prd.setDmstDiv("D");
-								else
-									prd.setDmstDiv("A");
-								prd.setDepArpt(city.getDepCity());
-								prdList.add(prd);
-//								break;
+	//							break;
 							}
-//							break;
+						}catch(Exception e){
+							log("Get PrdList Exception : ", e.getStackTrace()[0].toString());
 						}
 //						break;
 					}
@@ -238,7 +257,7 @@ public class TourbaksaHandler extends _TouristAgencyHandler{
 				}
 //				break;
 			}
-			System.out.println("asdasdff");
+			System.out.println("get prd finished.. =======================================================================================");
 			
 		}catch(Exception e){
 			log("Get Mainpage Exception : ", e.getStackTrace()[0].toString());

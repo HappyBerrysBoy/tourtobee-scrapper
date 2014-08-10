@@ -12,8 +12,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 
-import sun.org.mozilla.javascript.internal.json.JsonParser.ParseException;
-
 public class Util {
 	
 	/**
@@ -180,6 +178,40 @@ public class Util {
 		try {
 		      ////////////////////////////////////////////////////////////////
 			  BufferedWriter out = new BufferedWriter(new FileWriter("log.txt",true));
+		      String s = "[" + now + "]" + title + " : " + content;
+
+		      out.append(s);
+		      out.newLine();
+
+		      out.close();
+		      ////////////////////////////////////////////////////////////////
+		    } catch (IOException e) {
+		        System.err.println(e); // 에러가 있다면 메시지 출력
+		        System.exit(1);
+		    }
+	}
+	
+	/**
+	* 로그를 출력한다.
+	* @param title 타이틀
+	* @param content 내용
+	* @param filename
+	* @return "[시간] 타이틀 : 내용" 형식의 로그를 지정한 파일명으로 출력한다.
+	*/
+	public static void log(String title, String content, String filename){
+		Calendar c = Calendar.getInstance();
+		String now = String.format("%04d", c.get(Calendar.YEAR)) 
+				+ "/" + String.format("%02d", c.get(Calendar.MONTH) + 1)
+				+ "/" + String.format("%02d", c.get(Calendar.DAY_OF_MONTH))
+				+ " " + String.format("%02d", c.get(Calendar.HOUR_OF_DAY))
+				+ ":" + String.format("%02d", c.get(Calendar.MINUTE))
+				+ ":" + String.format("%02d", c.get(Calendar.SECOND));
+		
+		System.out.println("[" + now + "]" + title + " : " + content);
+		
+		try {
+		      ////////////////////////////////////////////////////////////////
+			  BufferedWriter out = new BufferedWriter(new FileWriter(filename,true));
 		      String s = "[" + now + "]" + title + " : " + content;
 
 		      out.append(s);

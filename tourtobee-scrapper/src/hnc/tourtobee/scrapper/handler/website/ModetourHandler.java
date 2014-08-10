@@ -22,13 +22,21 @@ import jh.project.httpscrapper.util.Html;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class ModetourHandler extends _TouristAgencyHandler{
-
-	public ModetourHandler(){}
+	HashMap<String, String> packageMap = new HashMap<String, String>();
+	
+	public ModetourHandler(){
+		packageMap.put("패키지", "P");
+	    packageMap.put("자유", "F");
+	    packageMap.put("허니문", "W");
+	    packageMap.put("골프", "G");
+	    packageMap.put("JM", "P");
+	    packageMap.put("크루즈", "C");
+	    packageMap.put("부산·지방출발", "P");
+	    packageMap.put("제주", "D");
+	}
 	
 	private class MenuUrl{
 		private String depcity;
@@ -67,6 +75,97 @@ public class ModetourHandler extends _TouristAgencyHandler{
 		private void setName(String name) {
 			this.name = name;
 		}
+		private String makeUrl(){
+			return "http://www.modetour.com/Package/subMain2.aspx?startLocation=" + this.depcity + "&id=" 
+					+ this.id + "&type=" + this.type + "&MLoc=" + this.loc;
+		}
+	}
+	
+	private class SubMenu{
+		private String depcity;
+		private String location;
+		private String location1;
+		private String theme;
+		private String theme1;
+		private String loc;
+		private String name;
+		
+		private String getDepcity() {
+			return depcity;
+		}
+		private void setDepcity(String depcity) {
+			this.depcity = depcity;
+		}
+		private String getLocation() {
+			return location;
+		}
+		private void setLocation(String location) {
+			this.location = location;
+		}
+		private String getLocation1() {
+			return location1;
+		}
+		private void setLocation1(String location1) {
+			this.location1 = location1;
+		}
+		private String getTheme() {
+			return theme;
+		}
+		private void setTheme(String theme) {
+			this.theme = theme;
+		}
+		private String getTheme1() {
+			return theme1;
+		}
+		private void setTheme1(String theme1) {
+			this.theme1 = theme1;
+		}
+		private String getLoc() {
+			return loc;
+		}
+		private void setLoc(String loc) {
+			this.loc = loc;
+		}
+		private String getName() {
+			return name;
+		}
+		private void setName(String name) {
+			this.name = name;
+		}
+		private String makeUrl(){
+			return "http://www.modetour.com/Package/List.aspx?startLocation=" + this.depcity + "&location=" + this.location
+					+ "&location1=" + this.location1 + "&Theme=" + this.theme + "&Theme1=" + this.theme1 + "&MLoc=" + this.loc;
+		}
+	}
+	
+	private MenuUrl setMenuUrl(Html html){
+		MenuUrl menu = new MenuUrl();
+		menu.setDepcity(html.toString().split("startLocation=")[1].split("&")[0]);
+		menu.setId(html.toString().split("id=")[1].split("&")[0]);
+		menu.setType(html.toString().split("type=")[1].split("&")[0]);
+		menu.setLoc(html.toString().split("MLoc=")[1].split("\"")[0]);
+		menu.setName(html.getTag("span").removeAllTags().toString().trim());
+		return menu;
+	}
+	
+	private SubMenu setSubMenuUrl(Html html){
+		SubMenu menu = new SubMenu();
+		menu.setDepcity(html.toString().split("startLocation=")[1].split("&")[0]);
+		menu.setLocation(html.toString().split("location=")[1].split("&")[0]);
+		menu.setLocation1(html.toString().split("location1=")[1].split("&")[0]);
+		if(html.toString().toUpperCase().contains("THEME=")){
+			menu.setTheme(html.toString().split("Theme=")[1].split("&")[0]);
+		}else{
+			menu.setTheme("");
+		}
+		if(html.toString().toUpperCase().contains("THEME1=")){
+			menu.setTheme1(html.toString().split("Theme1=")[1].split("&")[0]);
+		}else{
+			menu.setTheme1("");
+		}
+		menu.setLoc(html.toString().split("MLoc=")[1].split("\"")[0]);
+		menu.setName(html.getTag("span").removeAllTags().toString().trim());
+		return menu;
 	}
 	
 	@Override
@@ -75,10 +174,7 @@ public class ModetourHandler extends _TouristAgencyHandler{
 		ArrayList<Prd> prdList = new ArrayList<Prd>();
 		
 		try{
-			Website mainPage = new Website();
-			mainPage.setUrl(website.getUrl());
-			mainPage.setMethod("GET");
-			mainPage.setEncoding(website.getEncoding());
+			Website mainPage = new Website(website.getUrl(), "GET", website.getEncoding());
 			
 			Html mainHtml = new Html(this.getHtml(httpclient, mainPage));
 			
@@ -86,30 +182,112 @@ public class ModetourHandler extends _TouristAgencyHandler{
 			Html domesticHtml = mainHtml.getValueByClass("domestic");
 			
 			List<MenuUrl> menuList = new ArrayList<MenuUrl>();
+			List<String> prdCodeList = new ArrayList<String>();
 			
 			while(!overseasHtml.getTag("ul").getTag("li").toString().trim().equals("")){
 				Html menuHtml = overseasHtml.getTag("ul").getTag("li");
-				MenuUrl menu = new MenuUrl();
-				menu.setDepcity(menuHtml.toString().split("startLocation=")[1].split("&")[0]);
-				menu.setId(menuHtml.toString().split("id=")[1].split("&")[0]);
-				menu.setType(menuHtml.toString().split("type=")[1].split("&")[0]);
-				menu.setLoc(menuHtml.toString().split("MLoc=")[1].split("\"")[0]);
-				menu.setName(menuHtml.getTag("span").removeAllTags().toString().trim());
-				menuList.add(menu);
+				overseasHtml = overseasHtml.getTag("ul").removeTag("li");
+				if(!menuHtml.toString().toUpperCase().contains("SUBMAIN2"))
+					continue;
+				
+				menuList.add(setMenuUrl(menuHtml));
 			}
 			
 			while(!domesticHtml.getTag("ul").getTag("li").toString().trim().equals("")){
-				Html menuHtml = overseasHtml.getTag("ul").getTag("li");
-				MenuUrl menu = new MenuUrl();
-				menu.setDepcity(menuHtml.toString().split("startLocation=")[1].split("&")[0]);
-				menu.setId(menuHtml.toString().split("id=")[1].split("&")[0]);
-				menu.setType(menuHtml.toString().split("type=")[1].split("&")[0]);
-				menu.setLoc(menuHtml.toString().split("MLoc=")[1].split("\"")[0]);
-				menu.setName(menuHtml.getTag("span").removeAllTags().toString().trim());
-				menuList.add(menu);
+				Html menuHtml = domesticHtml.getTag("ul").getTag("li");
+				domesticHtml = domesticHtml.getTag("ul").removeTag("li");
+				if(!menuHtml.toString().toUpperCase().contains("제주"))
+					continue;
+				
+				menuList.add(setMenuUrl(menuHtml));
 			}
 			
-			System.out.println("");
+			for(MenuUrl menu : menuList){
+				try{
+					Website menuPage = new Website(menu.makeUrl(), "GET", website.getEncoding());
+					
+					Html menuHtml = new Html(this.getHtml(httpclient, menuPage));
+					menuHtml = menuHtml.getValueByClass("submain");
+					
+					while(!menuHtml.getValueByClass("cols").toString().equals("")){
+						Html subMenuHtml = menuHtml.getValueByClass("cols");
+						menuHtml = menuHtml.removeValueByClass("cols");
+						
+						while(!subMenuHtml.getTag("dl").toString().equals("")){
+							Html regionMenuHtml = subMenuHtml.getTag("dl");
+							subMenuHtml = subMenuHtml.removeTag("dl");
+							
+							while(!regionMenuHtml.getTag("dt").toString().equals("") 
+									|| !regionMenuHtml.getTag("dd").toString().equals("")){
+								Html regionHtml = regionMenuHtml.getTag("dt");
+								String regionMenu = regionHtml.removeAllTags().toString().trim();
+								
+								if(regionHtml.toString().equals("")){
+									regionHtml = regionMenuHtml.getTag("dd");
+									regionMenuHtml = regionMenuHtml.removeTag("dd");
+								}else{
+									regionMenuHtml = regionMenuHtml.removeTag("dt");
+								}
+								
+								SubMenu submenu = setSubMenuUrl(regionHtml);
+								String anCode = submenu.makeUrl().split("location=LOC")[1].split("&")[0];
+								String themeCode = submenu.makeUrl().split("Theme=")[1].split("&")[0];
+								String prdXmlUrl = "http://www.modetour.com/XML/Package/Get_ProductList.aspx?AN=" + anCode + "&Ct=&PL=1000&Pd=&Pn=1&TN=" + themeCode;
+								System.out.println("prdXmlUrl : " + prdXmlUrl);
+//								
+//								Website prdXmlPage = new Website(prdXmlUrl, "GET", website.getEncoding());
+//								
+//								Html prdXmlHtml = new Html(this.getHtml(httpclient, prdXmlPage));
+//								System.out.println(prdXmlHtml.toString());
+								
+								// XML Document 객체 생성
+								Document mainXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(prdXmlUrl);
+								
+								// xpath 생성
+								XPath xpath = XPathFactory.newInstance().newXPath();
+								
+								List<String> listPrdXml = new ArrayList<String>(); 
+								NodeList prdXmlList = (NodeList)xpath.evaluate("//Product", mainXml, XPathConstants.NODESET);
+								Prd[] prdTempList = new Prd[prdXmlList.getLength()];
+							    for(int idx = 0; idx<prdXmlList.getLength(); idx++){
+//							    	System.out.println(prdXmlList.item(idx).getAttributes().getNamedItem("Pcode").getTextContent());
+							    	prdTempList[idx] = new Prd();
+							    	prdTempList[idx].setTagnId(website.getId());
+							    	prdTempList[idx].setTrDiv(packageMap.get(menu.getName()));
+							    	prdTempList[idx].setDmstDiv("A");
+							    	prdTempList[idx].setPrdNo(prdXmlList.item(idx).getAttributes().getNamedItem("Pcode").getTextContent());
+//							    	listPrdXml.add(prdXmlList.item(idx).getTextContent());
+							    }
+							    
+							    NodeList prdNameXmlList = (NodeList)xpath.evaluate("//Product/Name", mainXml, XPathConstants.NODESET);
+							    for(int idx = 0; idx<prdNameXmlList.getLength(); idx++){
+//							    	System.out.println(prdXmlList.item(idx).getAttributes().getNamedItem("Pcode").getTextContent());
+							    	prdTempList[idx].setPrdNm(prdNameXmlList.item(idx).getTextContent());
+//							    	listPrdXml.add(prdXmlList.item(idx).getTextContent());
+							    }
+							    
+							    NodeList prdDescXmlList = (NodeList)xpath.evaluate("//Product/Content", mainXml, XPathConstants.NODESET);
+							    for(int idx = 0; idx<prdDescXmlList.getLength(); idx++){
+//							    	System.out.println(prdXmlList.item(idx).getAttributes().getNamedItem("Pcode").getTextContent());
+							    	prdTempList[idx].setPrdDesc(prdDescXmlList.item(idx).getTextContent());
+							    	prdTempList[idx].setAreaList(this.getAreaList(prdTempList[idx].getPrdNm() + " " + prdTempList[idx].getPrdDesc(), regionMenu));
+							    	prdTempList[idx].setPrdUrl("http://www.modetour.com/Xml/Package/Get_Pcode.aspx?Ct=&Month=thismonth&Pcode=" + prdTempList[idx].getPrdNo() + "&Pd=&Type=01");
+							    	prdList.add(prdTempList[idx]);
+//							    	listPrdXml.add(prdXmlList.item(idx).getTextContent());
+							    }
+							    
+							    for(String detailPrd : listPrdXml){
+							    	if (prdCodeList.contains(detailPrd))
+							    		continue;
+							    }
+							}
+						}
+					}
+					
+				}catch(Exception e){
+					log("Menu Exception : ", e.getStackTrace()[0].toString());
+				}
+			}
 			
 		}catch(Exception e){
 			log("Get Mainpage Exception : ", e.getStackTrace()[0].toString());
@@ -128,7 +306,7 @@ public class ModetourHandler extends _TouristAgencyHandler{
 //			prd.setPrdUrl("http://www.ybtour.co.kr/Goods/overseas/inc_view_cal_dev.asp?good_type_cd=2&area_cd=10&good_yy=2009&good_seq=88");
 			for (String month : monthSet){
 				if(!"FW".contains(prd.getTrDiv())){
-					String prdDtlSummaryUrl = prd.getPrdUrl() + month;	
+					String prdDtlSummaryUrl = prd.getPrdUrl().replace("thismonth", month.substring(4, 6));	
 					
 					Website prdDtlListSite = new Website();
 					prdDtlListSite.setUrl(prdDtlSummaryUrl);

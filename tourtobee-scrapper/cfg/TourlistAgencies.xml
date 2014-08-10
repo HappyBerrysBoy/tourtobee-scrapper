@@ -1,17 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site-list>
-	<site id="hanatour" handler="hnc.tourtobee.scrapper.handler.website.HanatourHandler">
-		<name>하나투어</name>
-		<url>http://www.hanatour.com/</url>
-		<encoding>euc-kr</encoding>
-		<method>GET</method>
-	</site>
-	<site id="ybtour" handler="hnc.tourtobee.scrapper.handler.website.YellowBalloonHandler">
-		<name>노랑풍선</name>
-		<url>http://www.ybtour.co.kr/GoodSearch/Area_Menu_XML.asp</url>
-		<encoding>euc-kr</encoding>
-		<method>GET</method>
-	</site>
 	<site id="KRT" handler="hnc.tourtobee.scrapper.handler.website.KRTHandler">
 		<name>KRT 여행사</name>
 		<url>http://www.krt.co.kr/_js2014/menu2014.js</url>
@@ -24,9 +12,6 @@
 		<encoding>utf-8</encoding>
 		<method>GET</method>
 	</site>
-<<<<<<< HEAD
-	
-=======
 	<site id="hanatour" handler="hnc.tourtobee.scrapper.handler.website.HanatourHandler">
 		<name>하나투어</name>
 		<url>http://www.hanatour.com/</url>
@@ -51,5 +36,4 @@
 		<encoding>euc-kr</encoding>
 		<method>GET</method>
 	</site>
->>>>>>> 57742b119dd0c163d86f963d4e1a4b2d7abfbb72
 </site-list>

@@ -290,24 +290,13 @@ public class ScrappingEngine {
 	public void scrapPrd(Website website, HashMap<String, String> options){
 		_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
-<<<<<<< HEAD
-		ArrayList<Prd> prdList = new ArrayList<Prd>();
-		
-=======
 
->>>>>>> 57742b119dd0c163d86f963d4e1a4b2d7abfbb72
 		try {
 			if (!this.conn.isValid(10)) initConn();
 
 			log(website.getId() + " scrapPrd Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
-<<<<<<< HEAD
-			
-			prdList = handler.scrapPrdList(httpclient, website, options, null);
-=======
-
 			httpclient = HttpClients.createDefault();
 			ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
->>>>>>> 57742b119dd0c163d86f963d4e1a4b2d7abfbb72
 			log(website.getId() + " Scrap Prd ", prdList.size() + " Prds");
 
 			int prdCnt = 0;
@@ -316,20 +305,16 @@ public class ScrappingEngine {
 					if (prd == null) continue;
 					mergePrd(this.conn, prd);
 					prdCnt++;
-//					log(website.getId() + " Merge Prd ", prd.getPrdNo() + " (" + prdCnt + "/" + prdList.size() + ")");
+					log(website.getId() + " Merge Prd ", prd.getPrdNo() + " (" + prdCnt + "/" + prdList.size() + ")");
 				}
 			}
 
 			prdCnt = 0;
 			if (prdList != null && prdList.size() > 0){
 				for (Prd prd : prdList){
-<<<<<<< HEAD
-//					log(website.getId() + "   Prd(" + prd.getPrdNo() + ")", "Start DTL scrap");
-=======
 					log(website.getId() + "   scrapPrd(" + prd.getPrdNo() + ")" + " (" + prdCnt + "/" + prdList.size() + ")", "Start DTL scrap : " + prd.getPrdUrl());
 					prdCnt++;
 					httpclient = HttpClients.createDefault();
->>>>>>> 57742b119dd0c163d86f963d4e1a4b2d7abfbb72
 					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
 					log(website.getId() + "   scrapPrd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
 					for (PrdDtl prdDtl : prdDtlList){

@@ -30,4 +30,10 @@
 		<encoding>utf-8</encoding>
 		<method>GET</method>
 	</site>
+	<site id="tourbaksa" handler="hnc.tourtobee.scrapper.handler.website.TourbaksaHandler">
+		<name>여행박사</name>
+		<url>http://www.tourbaksa.com/</url>
+		<encoding>euc-kr</encoding>
+		<method>GET</method>
+	</site>
 </site-list>

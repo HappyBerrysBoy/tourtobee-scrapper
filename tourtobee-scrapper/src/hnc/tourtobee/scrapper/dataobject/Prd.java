@@ -28,15 +28,15 @@ public class Prd extends _DataObject{
 	private String prdDescMd = "";
 	private String prdUrl = "";
 	private String depArpt = "";
-	
+	private String aircode = "";		// 여행박사에서는 T_PRD 단에서 항공코드 결정됨
+	private String night = "";			// 여행박사에서는 T_PRD 단에서 박수가 결정됨
+	private String trterm = "";			// 여행박사에서는 T_PRD 단에서 일수가 결정됨
 	
 	public Prd() {
 		prdDtlLst = new ArrayList<PrdDtl>();
 		areaList = new ArrayList<TtrTrArea>();
 	}
 	
-
-
 	public ArrayList<PrdDtl> getPrdDtlLst() {
 		return prdDtlLst;
 	}
@@ -55,7 +55,6 @@ public class Prd extends _DataObject{
 	public void addAreaList(TtrTrArea area){
 		this.areaList.add(area);
 	}
-
 	public String getTagnId() {
 		return tagnId;
 	}
@@ -128,5 +127,22 @@ public class Prd extends _DataObject{
 	public void setDepArpt(String depArpt) {
 		this.depArpt = depArpt;
 	}
-	
+	public String getAircode() {
+		return aircode;
+	}
+	public void setAircode(String aircode) {
+		this.aircode = aircode;
+	}
+	public String getNight() {
+		return night;
+	}
+	public void setNight(String night) {
+		this.night = night;
+	}
+	public String getTrterm() {
+		return trterm;
+	}
+	public void setTrterm(String trterm) {
+		this.trterm = trterm;
+	}
 }

@@ -7,6 +7,7 @@ import static hnc.tourtobee.code.Codes.PRD_CLASS;
 import static hnc.tourtobee.code.Codes.ARPT_NAME_CODE;
 import static hnc.tourtobee.code.Codes.PRD_STATUS;
 import static hnc.tourtobee.code.Codes.WEEK_DAY_NUMBER;
+import static hnc.tourtobee.util.Util.log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,75 +47,80 @@ public class HanatourHandler extends _TouristAgencyHandler {
 			}
 			
 			for(Menu menu : menuList){
-				Website prdListWebsite = website;
-				String url = "http://www.hanatour.com/asp/booking/productPackage/pk-11000-list.asp?" + menu.getMenuUrl().split("\\?")[1];
+				try{
+					Website prdListWebsite = website;
+					String url = "";
+					url = "http://www.hanatour.com/asp/booking/productPackage/pk-11000-list.asp?" + menu.getMenuUrl().split("\\?")[1];
+					prdListWebsite.setUrl(url);
+					String jsonStr = this.getHtml(httpclient, prdListWebsite).trim();
+					jsonStr = jsonStr.replaceFirst("fnSetMstList\\(", "");
+					jsonStr = jsonStr.substring(0, jsonStr.length() - 1);
+					Gson gson = new GsonBuilder().create();
 					
-				prdListWebsite.setUrl(url);
-				String jsonStr = this.getHtml(httpclient, prdListWebsite).trim();
-				jsonStr = jsonStr.replaceFirst("fnSetMstList\\(", "");
-				jsonStr = jsonStr.substring(0, jsonStr.length() - 1);
-				Gson gson = new GsonBuilder().create();
-				JsonPrds prds = gson.fromJson(jsonStr, JsonPrds.class);
-				
-				for (JsonPrds.Cont jsonPrd : prds.cont){
-					Prd p = new Prd();
-					p.setTagnId(website.getId());
-					p.setPrdNo(jsonPrd.pkg_mst_code);
-					if (insPrds != null && insPrds.contains(p.getPrdNo())) continue;
-					p.setPrdNm(jsonPrd.mst_name);
-					p.setPrdDesc(jsonPrd.t_content);
+					JsonPrds prds = gson.fromJson(jsonStr, JsonPrds.class);
 					
-					p.setPrdUrl("http://www.hanatour.com/asp/booking/productPackage/pk-11001.asp?pkg_mst_code=" + p.getPrdNo());
-					
-					if(i == 0){
-						p.setPrdDesc(PRD_CLASS.get("패키지"));
-						p.setDmstDiv("A");
-						if (menu.getMenuCode().contains("지방출발")){
-							p.setDepArpt(ARPT_NAME_CODE.get(menu.getMenuName().substring(0, 2)));
-						}else{
-							p.setDepArpt(ARPT_NAME_CODE.get("인천"));
-						}
-					}else if(i == 1){
-						p.setPrdDesc(PRD_CLASS.get("허니문"));
-						p.setDmstDiv("A");
-						if (menu.getMenuCode().contains("지방출발")){
-							p.setDepArpt(ARPT_NAME_CODE.get(menu.getMenuName().substring(0, 2)));
-						}else{
-							p.setDepArpt(ARPT_NAME_CODE.get("인천"));
-						}
-					}else if(i == 2){
-						p.setPrdDesc(PRD_CLASS.get("골프"));
-						p.setDmstDiv("A");
-						if (menu.getMenuCode().contains("지방출발")){
-							p.setDepArpt(ARPT_NAME_CODE.get(menu.getMenuName().substring(0, 2)));
-						}else{
-							p.setDepArpt(ARPT_NAME_CODE.get("인천"));
-						}
-					}else if(i == 3){
-						p.setPrdDesc(PRD_CLASS.get("크루즈"));
-						p.setDmstDiv("A");
-						if (menu.getMenuCode().contains("지방출발")){
-							p.setDepArpt(ARPT_NAME_CODE.get(menu.getMenuName().substring(0, 2)));
-						}else{
-							p.setDepArpt(ARPT_NAME_CODE.get("인천"));
-						}
-					}else if(i == 4){
-						p.setDmstDiv("D");
-						if (menu.getMenuName().equals("허니문")){
-							p.setPrdDesc(PRD_CLASS.get("허니문"));
-						}else{
-							p.setPrdDesc(PRD_CLASS.get("국내"));
-							if (!menu.getMenuName().contains("세미패키지")){
+					for (JsonPrds.Cont jsonPrd : prds.cont){
+						Prd p = new Prd();
+						p.setTagnId(website.getId());
+						p.setPrdNo(jsonPrd.pkg_mst_code);
+						if (insPrds != null && insPrds.contains(p.getPrdNo())) continue;
+						p.setPrdNm(jsonPrd.mst_name);
+						p.setPrdDesc(jsonPrd.t_content);
+						
+						p.setPrdUrl("http://www.hanatour.com/asp/booking/productPackage/pk-11001.asp?pkg_mst_code=" + p.getPrdNo());
+						
+						if(i == 0){
+							p.setPrdDesc(PRD_CLASS.get("패키지"));
+							p.setDmstDiv("A");
+							if (menu.getMenuCode().contains("지방출발")){
 								p.setDepArpt(ARPT_NAME_CODE.get(menu.getMenuName().substring(0, 2)));
 							}else{
 								p.setDepArpt(ARPT_NAME_CODE.get("인천"));
 							}
+						}else if(i == 1){
+							p.setPrdDesc(PRD_CLASS.get("허니문"));
+							p.setDmstDiv("A");
+							if (menu.getMenuCode().contains("지방출발")){
+								p.setDepArpt(ARPT_NAME_CODE.get(menu.getMenuName().substring(0, 2)));
+							}else{
+								p.setDepArpt(ARPT_NAME_CODE.get("인천"));
+							}
+						}else if(i == 2){
+							p.setPrdDesc(PRD_CLASS.get("골프"));
+							p.setDmstDiv("A");
+							if (menu.getMenuCode().contains("지방출발")){
+								p.setDepArpt(ARPT_NAME_CODE.get(menu.getMenuName().substring(0, 2)));
+							}else{
+								p.setDepArpt(ARPT_NAME_CODE.get("인천"));
+							}
+						}else if(i == 3){
+							p.setPrdDesc(PRD_CLASS.get("크루즈"));
+							p.setDmstDiv("A");
+							if (menu.getMenuCode().contains("지방출발")){
+								p.setDepArpt(ARPT_NAME_CODE.get(menu.getMenuName().substring(0, 2)));
+							}else{
+								p.setDepArpt(ARPT_NAME_CODE.get("인천"));
+							}
+						}else if(i == 4){
+							p.setDmstDiv("D");
+							if (menu.getMenuName().equals("허니문")){
+								p.setPrdDesc(PRD_CLASS.get("허니문"));
+							}else{
+								p.setPrdDesc(PRD_CLASS.get("국내"));
+								if (!menu.getMenuName().contains("세미패키지")){
+									p.setDepArpt(ARPT_NAME_CODE.get(menu.getMenuName().substring(0, 2)));
+								}else{
+									p.setDepArpt(ARPT_NAME_CODE.get("인천"));
+								}
+							}
 						}
+						
+						p.setAreaList(this.getAreaList(p.getPrdNm() + " " + p.getPrdDesc(), menu.getMenuName()));
+						
+						prdList.add(p);
 					}
-					
-					p.setAreaList(this.getAreaList(p.getPrdNm() + " " + p.getPrdDesc(), menu.getMenuName()));
-					
-					prdList.add(p);
+				}catch(Exception e){
+					log(this.getClass().getName() + "-scrapPrdList", "(" + menu.getMenuUrl() + ")" + e.toString());
 				}
 			}
 		}
@@ -143,60 +149,70 @@ public class HanatourHandler extends _TouristAgencyHandler {
 			JsonPrdDtl prdDtls = gson.fromJson(jsonStr, JsonPrdDtl.class);
 			
 			for (JsonPrdDtl.Cont jsonPrdDtl : prdDtls.cont){
-				
-				String prdSeq = jsonPrdDtl.pcode;
-				String prdDtlNm = jsonPrdDtl.pname;
-				String depDt = month.substring(0, 4) + jsonPrdDtl.sdate.replaceAll("[ \\/\\(\\):월화수목금토일]", "");
-				String depDtYmd = depDt.substring(0, 8);
-				String depDtHm = depDt.substring(8, 12);
-				String depDtWd = jsonPrdDtl.sdate.substring(7, 8);
-				String arrDt = "";
-				if (Integer.parseInt(jsonPrdDtl.sdate.substring(0, 2)) > Integer.parseInt(jsonPrdDtl.adate.substring(0, 2))){
-					arrDt = String.valueOf(Integer.parseInt(month.substring(0, 4)) + 1 );
-				}else{
-					arrDt = String.valueOf(Integer.parseInt(month.substring(0, 4)));
+				try{
+					String prdSeq = jsonPrdDtl.pcode;
+					String prdDtlNm = jsonPrdDtl.pname;
+					String depDt = month.substring(0, 4) + jsonPrdDtl.sdate.replaceAll("[ \\/\\(\\):월화수목금토일]", "");
+					String depDtYmd = depDt.substring(0, 8);
+					String depDtHm = "0000";
+					if (depDt.length() == 12){
+						depDtHm = depDt.substring(8, 12);
+					}
+					String depDtWd = jsonPrdDtl.sdate.substring(7, 8);
+					String arrDt = "";
+					if (Integer.parseInt(jsonPrdDtl.sdate.substring(0, 2)) > Integer.parseInt(jsonPrdDtl.adate.substring(0, 2))){
+						arrDt = String.valueOf(Integer.parseInt(month.substring(0, 4)) + 1 );
+					}else{
+						arrDt = String.valueOf(Integer.parseInt(month.substring(0, 4)));
+					}
+					arrDt = arrDt + jsonPrdDtl.adate.replaceAll("[ \\/\\(\\):월화수목금토일]", "");
+					String arrDtYmd = arrDt.substring(0, 8);
+					String arrDtHm = "0000";
+					if (arrDt.length() == 12){
+						arrDtHm = arrDt.substring(8, 12);
+					}
+					String arrDtWd = jsonPrdDtl.adate.substring(7, 8);
+					
+					String prdSt = "";
+					if (jsonPrdDtl.lminute.equals("0")){
+						prdSt = PRD_STATUS.get("예약마감");
+					}else if (jsonPrdDtl.lminute.equals("1")){
+						prdSt = PRD_STATUS.get("예약가능");
+					}else if (jsonPrdDtl.lminute.equals("2")){
+						prdSt = PRD_STATUS.get("출발확정");
+					}else{
+						prdSt = PRD_STATUS.get("예약가능");
+					}
+					
+					String prdFeeAd = jsonPrdDtl.amt;
+					String prdUrl = "http://www.hanatour.com/asp/booking/productPackage/pk-12000.asp?"
+									+ "pkg_code=" + prdSeq
+									+ "&promo_doumi_code=";
+					
+					PrdDtl prdDtl = new PrdDtl();
+					prdDtl.setTagnId(website.getId());
+					prdDtl.setPrdNo(prd.getPrdNo());
+					prdDtl.setPrdSeq(prdSeq);
+					prdDtl.setPrdDtlNm(prdDtlNm);
+					prdDtl.setDepDt(depDt);
+					prdDtl.setDepDtYmd(depDtYmd);
+					prdDtl.setDepDtHm(depDtHm);
+					prdDtl.setDepDtWd(WEEK_DAY_NUMBER.get(depDtWd));
+					prdDtl.setArrDt(arrDt);
+					prdDtl.setArrDtYmd(arrDtYmd);
+					prdDtl.setArrDtHm(arrDtHm);
+					prdDtl.setArrDtWd(WEEK_DAY_NUMBER.get(arrDtWd));
+					prdDtl.setDepArpt(prd.getDepArpt());
+					prdDtl.setArlnId(jsonPrdDtl.acode);
+					prdDtl.setPrdSt(prdSt);
+					prdDtl.setPrdFeeAd(prdFeeAd);
+					prdDtl.setPrdUrl(prdUrl);
+					
+					prdDtlList.add(prdDtl);
+				}catch(Exception e){
+					log(this.getClass().getName() + "-scrapPrdList", "(" + prd.getPrdNo() + "/" + jsonPrdDtl.pcode + ")" + e.toString());
 				}
-				arrDt = arrDt + jsonPrdDtl.adate.replaceAll("[ \\/\\(\\):월화수목금토일]", "");
-				String arrDtYmd = arrDt.substring(0, 8);
-				String arrDtHm = arrDt.substring(8, 12);
-				String arrDtWd = jsonPrdDtl.adate.substring(7, 8);
 				
-				String prdSt = "";
-				if (jsonPrdDtl.lminute.equals("0")){
-					prdSt = PRD_STATUS.get("예약마감");
-				}else if (jsonPrdDtl.lminute.equals("1")){
-					prdSt = PRD_STATUS.get("예약가능");
-				}else if (jsonPrdDtl.lminute.equals("2")){
-					prdSt = PRD_STATUS.get("출발확정");
-				}else{
-					prdSt = PRD_STATUS.get("예약가능");
-				}
-				
-				String prdFeeAd = jsonPrdDtl.amt;
-				String prdUrl = "http://www.hanatour.com/asp/booking/productPackage/pk-12000.asp?"
-								+ "pkg_code=" + prdSeq
-								+ "&promo_doumi_code=";
-				
-				PrdDtl prdDtl = new PrdDtl();
-				prdDtl.setTagnId(website.getId());
-				prdDtl.setPrdNo(prd.getPrdNo());
-				prdDtl.setPrdSeq(prdSeq);
-				prdDtl.setPrdDtlNm(prdDtlNm);
-				prdDtl.setDepDt(depDt);
-				prdDtl.setDepDtYmd(depDtYmd);
-				prdDtl.setDepDtHm(depDtHm);
-				prdDtl.setDepDtWd(WEEK_DAY_NUMBER.get(depDtWd));
-				prdDtl.setArrDt(arrDt);
-				prdDtl.setArrDtYmd(arrDtYmd);
-				prdDtl.setArrDtHm(arrDtHm);
-				prdDtl.setArrDtWd(WEEK_DAY_NUMBER.get(arrDtWd));
-				prdDtl.setDepArpt(prd.getDepArpt());
-				prdDtl.setArlnId(jsonPrdDtl.acode);
-				prdDtl.setPrdSt(prdSt);
-				prdDtl.setPrdFeeAd(prdFeeAd);
-				prdDtl.setPrdUrl(prdUrl);
-				
-				prdDtlList.add(prdDtl);
 			}
 		}
 		return prdDtlList;

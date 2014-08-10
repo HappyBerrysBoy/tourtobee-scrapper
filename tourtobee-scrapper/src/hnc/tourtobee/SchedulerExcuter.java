@@ -6,7 +6,6 @@ import static org.quartz.TriggerBuilder.newTrigger;
 import static hnc.tourtobee.util.Util.log;
 
 import java.io.File;
-import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -22,7 +21,6 @@ import org.quartz.Trigger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import com.sun.xml.internal.ws.wsdl.writer.UsingAddressing;
 /**
  * 스케줄러를 가동하는 Class
  * @author purepleya
@@ -60,15 +58,15 @@ public class SchedulerExcuter {
 											.usingJobData("noOfThreads", noThreads)
 											.usingJobData("scrapPeriod", scrapPeriod);
 				
-				Trigger prdTrigger = newTrigger().withIdentity("ScrapPrd", "ScrapPrdGroup")
-						.withSchedule(cronSchedule(scrapSchedule))
-						.build();
-				
 				//XML 에서 설정한 thread 갯수만큼 job을 생성시켜 실행 한다.
 				for(int i = 0; i < noThreads ; i++){
 					prdJobBuilder.usingJobData("threadNo", i);
 					JobDetail job = prdJobBuilder.withIdentity("ScrapPrd" + String.valueOf(i), "ScrapPrdGroup")
 													.build();
+					Trigger prdTrigger = newTrigger().withIdentity("ScrapPrd" + String.valueOf(i), "ScrapPrdGroup")
+							.withSchedule(cronSchedule(scrapSchedule))
+							.forJob("ScrapPrd" + String.valueOf(i), "ScrapPrdGroup")
+							.build();
 					sched.scheduleJob(job, prdTrigger);
 				}
 			}
@@ -80,14 +78,15 @@ public class SchedulerExcuter {
 						.usingJobData("noOfThreads", noThreads)
 						.usingJobData("scrapPeriod", scrapDtlSummaryPeriod);
 				
-				Trigger prdDtlSummaryTrigger = newTrigger().withIdentity("ScrapDtlSummary", "ScrapDtlSummaryGroup")
-															.withSchedule(cronSchedule(scrapSchedule))
-															.build();
 				//XML 에서 설정한 thread 갯수만큼 job을 생성시켜 실행 한다.
 				for(int i = 0; i < noThreads ; i++){
 					prdDtlSummaryJobBuilder.usingJobData("threadNo", i);
 					JobDetail job = prdDtlSummaryJobBuilder.withIdentity("ScrapDtlSummary" + String.valueOf(i), "ScrapDtlSummaryGroup")
 															.build();
+					Trigger prdDtlSummaryTrigger = newTrigger().withIdentity("ScrapDtlSummary" + String.valueOf(i), "ScrapDtlSummaryGroup")
+							.withSchedule(cronSchedule(scrapDtlSummarySchedule))
+							.forJob("ScrapDtlSummary" + String.valueOf(i), "ScrapDtlSummaryGroup")
+							.build();
 					sched.scheduleJob(job, prdDtlSummaryTrigger);
 				}
 			}

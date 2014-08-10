@@ -54,7 +54,8 @@ public class Excuter {
 					HashMap<String, String> options = new HashMap<String, String>();
 					options.put("until", toMonth);
 					
-					se.scrapPrd(website, options);
+//					se.scrapPrd(website, options);
+					se.scrapDtlSummary(website, options);
 					
 //					_TouristAgencyHandler handler = (_TouristAgencyHandler)website.getHandler();
 //					CloseableHttpClient httpclient = HttpClients.createDefault();

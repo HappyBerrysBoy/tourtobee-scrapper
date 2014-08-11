@@ -22,6 +22,7 @@ import jh.project.httpscrapper.util.Html;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class ModetourHandler extends _TouristAgencyHandler{
@@ -149,23 +150,23 @@ public class ModetourHandler extends _TouristAgencyHandler{
 	}
 	
 	private SubMenu setSubMenuUrl(Html html){
-		SubMenu menu = new SubMenu();
-		menu.setDepcity(html.toString().split("startLocation=")[1].split("&")[0]);
-		menu.setLocation(html.toString().split("location=")[1].split("&")[0]);
-		menu.setLocation1(html.toString().split("location1=")[1].split("&")[0]);
+		SubMenu submenu = new SubMenu();
+		submenu.setDepcity(html.toString().split("startLocation=")[1].split("&")[0]);
+		submenu.setLocation(html.toString().split("location=")[1].split("&")[0]);
+		submenu.setLocation1(html.toString().split("location1=")[1].split("&")[0]);
 		if(html.toString().toUpperCase().contains("THEME=")){
-			menu.setTheme(html.toString().split("Theme=")[1].split("&")[0]);
+			submenu.setTheme(html.toString().split("Theme=")[1].split("&")[0]);
 		}else{
-			menu.setTheme("");
+			submenu.setTheme("");
 		}
 		if(html.toString().toUpperCase().contains("THEME1=")){
-			menu.setTheme1(html.toString().split("Theme1=")[1].split("&")[0]);
+			submenu.setTheme1(html.toString().split("Theme1=")[1].split("&")[0]);
 		}else{
-			menu.setTheme1("");
+			submenu.setTheme1("");
 		}
-		menu.setLoc(html.toString().split("MLoc=")[1].split("\"")[0]);
-		menu.setName(html.getTag("span").removeAllTags().toString().trim());
-		return menu;
+		submenu.setLoc(html.toString().split("MLoc=")[1].split("\"")[0]);
+		submenu.setName(html.getTag("span").removeAllTags().toString().trim());
+		return submenu;
 	}
 	
 	@Override
@@ -219,76 +220,91 @@ public class ModetourHandler extends _TouristAgencyHandler{
 							
 							while(!regionMenuHtml.getTag("dt").toString().equals("") 
 									|| !regionMenuHtml.getTag("dd").toString().equals("")){
-								Html regionHtml = regionMenuHtml.getTag("dt");
-								String regionMenu = regionHtml.removeAllTags().toString().trim();
-								
-								if(regionHtml.toString().equals("")){
-									regionHtml = regionMenuHtml.getTag("dd");
-									regionMenuHtml = regionMenuHtml.removeTag("dd");
-								}else{
-									regionMenuHtml = regionMenuHtml.removeTag("dt");
+								try{
+									Html regionHtml = regionMenuHtml.getTag("dt");
+									String regionMenu = regionHtml.removeAllTags().toString().trim();
+									
+									if(regionHtml.toString().equals("")){
+										regionHtml = regionMenuHtml.getTag("dd");
+										regionMenuHtml = regionMenuHtml.removeTag("dd");
+									}else{
+										regionMenuHtml = regionMenuHtml.removeTag("dt");
+									}
+									
+									SubMenu submenu = setSubMenuUrl(regionHtml);
+									String anCode = submenu.makeUrl().split("location=LOC")[1].split("&")[0];
+									String themeCode = submenu.makeUrl().split("Theme=")[1].split("&")[0];
+									String prdXmlUrl = "http://www.modetour.com/XML/Package/Get_ProductList.aspx?AN=" + anCode + "&Ct=&PL=1000&Pd=&Pn=1&TN=" + themeCode;
+									System.out.println("prdXmlUrl : " + prdXmlUrl);
+//									
+//									Website prdXmlPage = new Website(prdXmlUrl, "GET", website.getEncoding());
+//									
+//									Html prdXmlHtml = new Html(this.getHtml(httpclient, prdXmlPage));
+//									System.out.println(prdXmlHtml.toString());
+									
+									// XML Document 객체 생성
+									Document mainXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(prdXmlUrl);
+									
+									// xpath 생성
+									XPath xpath = XPathFactory.newInstance().newXPath();
+									
+									NodeList prdXmlList = (NodeList)xpath.evaluate("//Product", mainXml, XPathConstants.NODESET);
+								    for(int idx = 0; idx<prdXmlList.getLength(); idx++){
+								    	try{
+									    	String prdno = prdXmlList.item(idx).getAttributes().getNamedItem("Pcode").getTextContent();
+									    	if(prdCodeList.contains(prdno))
+									    		continue;
+									    	
+									    	Prd prd = new Prd();
+									    	prd.setLocation(submenu.getLocation());
+									    	prd.setLocation1(submenu.getLocation1());
+									    	prd.setTheme(submenu.getTheme());
+									    	prd.setTheme1(submenu.getTheme1());
+									    	prd.setDepArpt(submenu.getDepcity());
+									    	prd.setLoc(submenu.getLoc());
+									    	prd.setTagnId(website.getId());
+									    	prd.setTrDiv(packageMap.get(menu.getName()));
+									    	prd.setDmstDiv("A");
+									    	prd.setPrdNo(prdno);
+									    	
+									    	Node node = prdXmlList.item(idx);
+									    	NodeList childNode = node.getChildNodes();
+									    	for(int i = 0; i<childNode.getLength(); i++){
+	//								    		System.out.println(childNode.item(i).getNodeName());
+									    		if(childNode.item(i).getNodeName().equals("Name")){
+									    			NodeList dtlChildNode = childNode.item(i).getChildNodes();
+	//								    			System.out.println(dtlChildNode.item(0).getTextContent());
+									    			prd.setPrdNm(dtlChildNode.item(0).getTextContent());
+									    		}else if(childNode.item(i).getNodeName().equals("Content")){
+									    			NodeList dtlChildNode = childNode.item(i).getChildNodes();
+	//								    			System.out.println(dtlChildNode.item(0).getTextContent());
+									    			prd.setPrdDesc(dtlChildNode.item(0).getTextContent());
+									    		}
+									    	}
+									    	
+									    	prd.setAreaList(this.getAreaList(prd.getPrdNm() + " " + prd.getPrdDesc(), regionMenu));
+									    	prd.setPrdUrl("http://www.modetour.com/Xml/Package/Get_Pcode.aspx?Ct=&Month=thismonth&Pcode=" + prd.getPrdNo() + "&Pd=&Type=01");
+									    	
+									    	prdCodeList.add(prd.getPrdNo());
+									    	prdList.add(prd);
+								    	}catch(Exception e){
+								    		log("Prd Parcing Exception : ", e.getStackTrace()[0].toString());
+								    	}
+								    }
+//								    break;
+								}catch(Exception e){
+									log("PrdList Exception : ", e.getStackTrace()[0].toString());
 								}
-								
-								SubMenu submenu = setSubMenuUrl(regionHtml);
-								String anCode = submenu.makeUrl().split("location=LOC")[1].split("&")[0];
-								String themeCode = submenu.makeUrl().split("Theme=")[1].split("&")[0];
-								String prdXmlUrl = "http://www.modetour.com/XML/Package/Get_ProductList.aspx?AN=" + anCode + "&Ct=&PL=1000&Pd=&Pn=1&TN=" + themeCode;
-								System.out.println("prdXmlUrl : " + prdXmlUrl);
-//								
-//								Website prdXmlPage = new Website(prdXmlUrl, "GET", website.getEncoding());
-//								
-//								Html prdXmlHtml = new Html(this.getHtml(httpclient, prdXmlPage));
-//								System.out.println(prdXmlHtml.toString());
-								
-								// XML Document 객체 생성
-								Document mainXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(prdXmlUrl);
-								
-								// xpath 생성
-								XPath xpath = XPathFactory.newInstance().newXPath();
-								
-								List<String> listPrdXml = new ArrayList<String>(); 
-								NodeList prdXmlList = (NodeList)xpath.evaluate("//Product", mainXml, XPathConstants.NODESET);
-								Prd[] prdTempList = new Prd[prdXmlList.getLength()];
-							    for(int idx = 0; idx<prdXmlList.getLength(); idx++){
-//							    	System.out.println(prdXmlList.item(idx).getAttributes().getNamedItem("Pcode").getTextContent());
-							    	prdTempList[idx] = new Prd();
-							    	prdTempList[idx].setTagnId(website.getId());
-							    	prdTempList[idx].setTrDiv(packageMap.get(menu.getName()));
-							    	prdTempList[idx].setDmstDiv("A");
-							    	prdTempList[idx].setPrdNo(prdXmlList.item(idx).getAttributes().getNamedItem("Pcode").getTextContent());
-//							    	listPrdXml.add(prdXmlList.item(idx).getTextContent());
-							    }
-							    
-							    NodeList prdNameXmlList = (NodeList)xpath.evaluate("//Product/Name", mainXml, XPathConstants.NODESET);
-							    for(int idx = 0; idx<prdNameXmlList.getLength(); idx++){
-//							    	System.out.println(prdXmlList.item(idx).getAttributes().getNamedItem("Pcode").getTextContent());
-							    	prdTempList[idx].setPrdNm(prdNameXmlList.item(idx).getTextContent());
-//							    	listPrdXml.add(prdXmlList.item(idx).getTextContent());
-							    }
-							    
-							    NodeList prdDescXmlList = (NodeList)xpath.evaluate("//Product/Content", mainXml, XPathConstants.NODESET);
-							    for(int idx = 0; idx<prdDescXmlList.getLength(); idx++){
-//							    	System.out.println(prdXmlList.item(idx).getAttributes().getNamedItem("Pcode").getTextContent());
-							    	prdTempList[idx].setPrdDesc(prdDescXmlList.item(idx).getTextContent());
-							    	prdTempList[idx].setAreaList(this.getAreaList(prdTempList[idx].getPrdNm() + " " + prdTempList[idx].getPrdDesc(), regionMenu));
-							    	prdTempList[idx].setPrdUrl("http://www.modetour.com/Xml/Package/Get_Pcode.aspx?Ct=&Month=thismonth&Pcode=" + prdTempList[idx].getPrdNo() + "&Pd=&Type=01");
-							    	prdList.add(prdTempList[idx]);
-//							    	listPrdXml.add(prdXmlList.item(idx).getTextContent());
-							    }
-							    
-							    for(String detailPrd : listPrdXml){
-							    	if (prdCodeList.contains(detailPrd))
-							    		continue;
-							    }
 							}
+//							break;
 						}
+//						break;
 					}
-					
 				}catch(Exception e){
 					log("Menu Exception : ", e.getStackTrace()[0].toString());
 				}
+//				break;
 			}
-			
 		}catch(Exception e){
 			log("Get Mainpage Exception : ", e.getStackTrace()[0].toString());
 		}
@@ -305,87 +321,115 @@ public class ModetourHandler extends _TouristAgencyHandler{
 //			prd.setTrDiv("W");
 //			prd.setPrdUrl("http://www.ybtour.co.kr/Goods/overseas/inc_view_cal_dev.asp?good_type_cd=2&area_cd=10&good_yy=2009&good_seq=88");
 			for (String month : monthSet){
-				if(!"FW".contains(prd.getTrDiv())){
-					String prdDtlSummaryUrl = prd.getPrdUrl().replace("thismonth", month.substring(4, 6));	
+				String prdDtlSummaryUrl = prd.getPrdUrl().replace("thismonth", month.substring(4, 6));	
+				
+				// XML Document 객체 생성
+				Document mainXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(prdDtlSummaryUrl);
+				// xpath 생성
+				XPath xpath = XPathFactory.newInstance().newXPath();
+				
+				NodeList dtlXmlList = (NodeList)xpath.evaluate("//SangList", mainXml, XPathConstants.NODESET);
+				
+				for(int idx=0; idx<dtlXmlList.getLength(); idx++){
+					NodeList prdDtlNodeList = dtlXmlList.item(idx).getChildNodes();
+					PrdDtl dtl = new PrdDtl();
+					dtl.setTagnId(website.getId());
+					dtl.setPrdNo(prd.getPrdNo());
+					String depDay = "";
+					String depTime = "";
+					String arrDay = "";
+					String arrTime = "";
 					
-					Website prdDtlListSite = new Website();
-					prdDtlListSite.setUrl(prdDtlSummaryUrl);
-					prdDtlListSite.setMethod("GET");
-					prdDtlListSite.setEncoding(website.getEncoding());
-					
-					Html prdDtlListHtml = new Html(this.getHtml(httpclient, prdDtlListSite));
-					
-					prdDtlListHtml = prdDtlListHtml.getTag("tbody");
-					
-					while(prdDtlListHtml.getTag("tr").toString().length() > 0){
-						try{
-							PrdDtl dtl = new PrdDtl();
-							prdDtlHtml = prdDtlListHtml.getTag("tr");
-	//						System.out.println("=======================================================");
-							prdDtlListHtml = prdDtlListHtml.removeTag("tr");
-							
-							dtl.setTagnId(website.getId());
-							dtl.setPrdNo(prd.getPrdNo());
-							dtl.setDepDt(month.substring(0, 4) + prdDtlHtml.getTag("span").removeAllTags().getOnlyNumber().toString());
-							prdDtlHtml.setHtml(prdDtlHtml.toString().replace(prdDtlHtml.getTag("span").toString(), ""));
-							dtl.setArrDt(month.substring(0, 4) + prdDtlHtml.getTag("span").removeAllTags().getOnlyNumber().toString());
-//							System.out.println("dep : " + dtl.getDepDt() + ", arr : " + dtl.getArrDt());
-							prdDtlHtml.setHtml(prdDtlHtml.toString().replace(prdDtlHtml.getTag("span").toString(), ""));
-							dtl.setArlnId(prdDtlHtml.toString().substring(prdDtlHtml.toString().indexOf(".gif") - 4, prdDtlHtml.toString().indexOf(".gif") - 2));
-							dtl.setPrdSeq(prdDtlHtml.getValueByClass("lt").toString().split("ev_seq=")[1].split("&")[0]);
-							dtl.setPrdUrl("http://www.ybtour.co.kr" + prdDtlHtml.getValueByClass("lt").findRegex("href=['\"][^\"]+").toString().replace("href=\"", ""));
-							dtl.setPrdDtlNm(prdDtlHtml.getValueByClass("lt").removeAllTags().toString().trim());
-							dtl.setPrdFeeAd(prdDtlHtml.getValueByClass("blue").removeAllTags().getOnlyNumber().toString());
-							prdDtlHtml = prdDtlHtml.removeValueByClass("blue");
-							prdDtlHtml = prdDtlHtml.removeTag("td");
-							prdDtlHtml = prdDtlHtml.removeTag("td");
-							prdDtlHtml = prdDtlHtml.removeTag("td");
-							prdDtlHtml = prdDtlHtml.removeTag("td");
-							prdDtlHtml = prdDtlHtml.removeTag("td");
-							
-							String sts = prdDtlHtml.getTag("td").removeAllTags().toString().trim();
-							if (sts.contains("출발확정")){
-								sts = "출발확정";
-							}else if (sts.contains("예약마감")){
-								sts = "예약마감";
-							}else if (sts.contains("예약가능")){
-								sts = "예약가능";
-							}else if (sts.contains("예약대기")){
-								sts = "대기예약";
-							}else{
-								sts = "예약가능";
-							}
-							
-							dtl.setPrdSt(PRD_STATUS.get(sts));
-							
-							prdDtlList.add(dtl);
-						}catch(Exception e){
-							log("PrdDtl Parcing Exception : ", e.getStackTrace()[0].toString());
+					for(int i=0; i<prdDtlNodeList.getLength(); i++){
+						Node dtlNode = prdDtlNodeList.item(i);
+						String xmlTag = dtlNode.getNodeName();
+						
+						switch(xmlTag){
+							case "SName":
+								NodeList dtlNameNode = dtlNode.getChildNodes();
+//								System.out.println(dtlNameNode.item(0).getTextContent());
+								dtl.setPrdDtlNm(dtlNameNode.item(0).getTextContent());
+								break;
+							case "SNight":
+//								System.out.println(dtlNode.getTextContent());
+								dtl.setTrTermBak(dtlNode.getTextContent());
+								break;
+							case "SDay":
+//								System.out.println(dtlNode.getTextContent());
+								dtl.setTrTerm(dtlNode.getTextContent());
+								break;
+							case "SPrice":
+//								System.out.println(dtlNode.getTextContent());
+								dtl.setPrdFeeAd(dtlNode.getTextContent());
+								break;
+							case "SAirCode":
+//								System.out.println(dtlNode.getTextContent());
+								if(dtlNode.getTextContent().length() > 1)
+									dtl.setArlnId(dtlNode.getTextContent().substring(0, 2));
+								else
+									dtl.setArlnId("");
+								break;
+							case "SAirName":
+//								System.out.println(dtlNode.getTextContent());
+								break;
+							case "SPriceDay":
+//								System.out.println(dtlNode.getTextContent());
+								depDay = dtlNode.getTextContent();
+								break;
+							case "SArrivalDay":
+//								System.out.println(dtlNode.getTextContent());
+								arrDay = dtlNode.getTextContent();
+								break;
+							case "SPriceNum":
+//								System.out.println(dtlNode.getTextContent());
+								dtl.setPrdSeq(dtlNode.getTextContent());
+								break;
+							case "SMeet":
+								if(!dtlNode.getTextContent().equals("33"))
+									System.out.println(dtlNode.getTextContent());
+								break;
+							case "SstartAir":
+//								System.out.println(dtlNode.getTextContent());
+								break;
+							case "SstartTime":
+//								System.out.println(dtlNode.getTextContent());
+								depTime = getOnlyNumber(dtlNode.getTextContent());
+								break;
+							case "SArrivalTime":
+//								System.out.println(dtlNode.getTextContent());
+								arrTime = getOnlyNumber(dtlNode.getTextContent());
+								break;
+							case "Sbooking":
+//								System.out.println(dtlNode.getTextContent());
+								break;
+							case "SPrefixName":
+								break;
+							case "SDetailState":
+//								System.out.println(dtlNode.getTextContent());
+								String sts = "";
+								if(dtlNode.getTextContent().equals("gray")){
+									sts = "예약마감";
+								}else if(dtlNode.getTextContent().equals("blue")){
+									sts = "예약가능";
+								}else if(dtlNode.getTextContent().equals("red")){
+									sts = "출발확정";
+								}else if(dtlNode.getTextContent().equals("green")){
+									sts = "대기예약";
+								}
+								dtl.setPrdSt(PRD_STATUS.get(sts));
+								break;
 						}
 					}
-//					break;
-				}else{
-					// 자유여행, 허니문인 경우..
-					String prdDtlSummaryUrl = prd.getPrdUrl();	
 					
-					Website prdDtlListSite = new Website();
-					prdDtlListSite.setUrl(prdDtlSummaryUrl);
-					prdDtlListSite.setMethod("GET");
-					prdDtlListSite.setEncoding(website.getEncoding());
-					
-					Html prdDtlListHtml = new Html(this.getHtml(httpclient, prdDtlListSite));
-					
-					prdDtlListHtml = prdDtlListHtml.getTag("tbody");
-					List<DayList> dayList = new ArrayList<DayList>();
-					
-					while(!prdDtlListHtml.getValueByClass("font_num").toString().trim().equals("")){
-						try{
-							
-						}catch(Exception e){
-							log("PrdDtl Parcing Exception : ", e.getStackTrace()[0].toString());
-						}
-					}
-					
+					dtl.setDepArpt(prd.getDepArpt());
+					String prdUrl = "http://www.modetour.com/Package/Itinerary.aspx?startLocation=" 
+										+ dtl.getDepArpt() + "&location=" + prd.getLocation() 
+										+ "&location1=" + prd.getLocation1() + "&theme=" + prd.getTheme()
+										+ "&theme1=" + prd.getTheme1() + "&MLoc=" + prd.getLoc() + "&Pnum=" + dtl.getPrdSeq(); 
+					dtl.setPrdUrl(prdUrl);
+					dtl.setDepDt(depDay + depTime);
+					dtl.setArrDt(arrDay + arrTime);
+					prdDtlList.add(dtl);
 				}
 			}
 		}catch(Exception e){

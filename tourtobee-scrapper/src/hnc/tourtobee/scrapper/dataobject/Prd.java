@@ -31,6 +31,11 @@ public class Prd extends _DataObject{
 	private String aircode = "";		// 여행박사에서는 T_PRD 단에서 항공코드 결정됨
 	private String night = "";			// 여행박사에서는 T_PRD 단에서 박수가 결정됨
 	private String trterm = "";			// 여행박사에서는 T_PRD 단에서 일수가 결정됨
+	private String location = "";		// 모두투어에서 사용
+	private String location1 = "";		// 모두투어에서 사용
+	private String theme = "";			// 모두투어에서 사용
+	private String theme1 = "";			// 모두투어에서 사용
+	private String loc = "";			// 모두투어에서 사용
 	
 	public Prd() {
 		prdDtlLst = new ArrayList<PrdDtl>();
@@ -144,5 +149,45 @@ public class Prd extends _DataObject{
 	}
 	public void setTrterm(String trterm) {
 		this.trterm = trterm;
+	}
+
+	public String getLocation() {
+		return location;
+	}
+
+	public void setLocation(String location) {
+		this.location = location;
+	}
+
+	public String getLocation1() {
+		return location1;
+	}
+
+	public void setLocation1(String location1) {
+		this.location1 = location1;
+	}
+
+	public String getTheme() {
+		return theme;
+	}
+
+	public void setTheme(String theme) {
+		this.theme = theme;
+	}
+
+	public String getTheme1() {
+		return theme1;
+	}
+
+	public void setTheme1(String theme1) {
+		this.theme1 = theme1;
+	}
+
+	public String getLoc() {
+		return loc;
+	}
+
+	public void setLoc(String loc) {
+		this.loc = loc;
 	}
 }

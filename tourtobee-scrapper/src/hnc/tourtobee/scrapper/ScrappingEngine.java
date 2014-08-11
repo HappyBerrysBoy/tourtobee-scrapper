@@ -90,7 +90,7 @@ public class ScrappingEngine {
 			pstmt.close();
 			rs.close();
 		}catch(Exception e){
-			e.printStackTrace();
+			log(this.getClass().getName() + "-getInsPrds", e.toString());
 		}
 		
 		return insPrds;
@@ -181,7 +181,7 @@ public class ScrappingEngine {
 			}
 			
 		}catch(Exception e){
-			e.printStackTrace();
+			log(this.getClass().getName() + "-mergePrd", e.toString());
 		}
 	}
 	
@@ -277,7 +277,7 @@ public class ScrappingEngine {
 			pstmt.clearParameters();
 			pstmt.close();
 		}catch(Exception e){
-			e.printStackTrace();
+			log(this.getClass().getName() + "-mergePrdDtl", e.toString());
 		}
 	}
 	
@@ -297,7 +297,7 @@ public class ScrappingEngine {
 			log(website.getId() + " scrapPrd Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 			httpclient = HttpClients.createDefault();
 			ArrayList<Prd> prdList = handler.scrapPrdList(httpclient, website, options, null);
-			log(website.getId() + " Scrap Prd ", prdList.size() + " Prds");
+			log(website.getId() + " Scrap Prd", prdList.size() + " Prds");
 
 			int prdCnt = 0;
 			if (prdList != null && prdList.size() > 0){
@@ -305,18 +305,17 @@ public class ScrappingEngine {
 					if (prd == null) continue;
 					mergePrd(this.conn, prd);
 					prdCnt++;
-					log(website.getId() + " Merge Prd ", prd.getPrdNo() + " (" + prdCnt + "/" + prdList.size() + ")");
 				}
 			}
 
 			prdCnt = 0;
 			if (prdList != null && prdList.size() > 0){
 				for (Prd prd : prdList){
-					log(website.getId() + "   scrapPrd(" + prd.getPrdNo() + ")" + " (" + prdCnt + "/" + prdList.size() + ")", "Start DTL scrap : " + prd.getPrdUrl());
+					log(website.getId() + " Scrap PrdDtl(" + prd.getPrdNo() + ")" + " (" + prdCnt + "/" + prdList.size() + ")", "Start DTL scrap : " + prd.getPrdUrl());
 					prdCnt++;
 					httpclient = HttpClients.createDefault();
 					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-					log(website.getId() + "   scrapPrd(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+					log(website.getId() + " Scrap PrdDtl(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
 					for (PrdDtl prdDtl : prdDtlList){
 						mergePrdDtl(this.conn, prdDtl);
 					}
@@ -325,7 +324,7 @@ public class ScrappingEngine {
 
 			log(website.getId() + " scrapPrd Finish ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 		} catch (SQLException e) {
-			log(this.getClass().getName() + "-scrapPrd", e.toString());
+			log(website.getId() +  " " + this.getClass().getName() + "-scrapPrd", e.toString());
 		}
 		
 	}
@@ -346,11 +345,13 @@ public class ScrappingEngine {
 			log(website.getId() + " scrapDtlSummary Start ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 			ArrayList<Prd> insPrds = getInsPrds(this.conn, website.getId());
 			
+			int prdCnt = 0;
 			if (insPrds != null && insPrds.size() > 0){
 				for (Prd prd : insPrds){
-					log(website.getId() + "   scrapDtlSummary(" + prd.getPrdNo() + ")", "Start DTL scrap");
+					log(website.getId() + " Scrap PrdDtl(" + prd.getPrdNo() + ")" + " (" + prdCnt + "/" + insPrds.size() + ")", "Start DTL scrap : " + prd.getPrdUrl());
+					prdCnt++;
 					ArrayList<PrdDtl> prdDtlList = handler.scrapPrdDtlSmmry(httpclient, website, options, prd);
-					log(website.getId() + "   scrapDtlSummary(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
+					log(website.getId() + " Scrap PrdDtl(" + prd.getPrdNo() + ")", String.valueOf(prdDtlList.size()) + " Dtls");
 					for (PrdDtl prdDtl : prdDtlList){
 						mergePrdDtl(this.conn, prdDtl);
 					}
@@ -358,7 +359,7 @@ public class ScrappingEngine {
 			}
 			log(website.getId() + " scrapDtlSummary Finish ", "!!!!!!!!!!!!!!!!!!!!!!!!");
 		} catch (SQLException e) {
-			log(this.getClass().getName() + "-scrapDtlSummary", e.toString());
+			log(website.getId() +  " " + this.getClass().getName() + "-scrapDtlSummary", e.toString());
 		}
 	}
 }

@@ -48,25 +48,27 @@ public class HanjinHandler extends _TouristAgencyHandler {
 				while(menuHtml.getTag("item").toString().length() > 0){
 					Html prdHtml = menuHtml.getTag("item");
 					menuHtml = menuHtml.removeTag("item");
-					
 					Prd prd = new Prd();
-					prd.setTagnId(website.getId());
-					prd.setPrdNo(prdHtml.getTag("PRODUCT_CODE").removeAllTags().toString());
-					prd.setPrdNm(prdHtml.getTag("PRODUCT_NAME").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PRODUCT_NAME>", ""));
-					prd.setTrDiv(menu.getMenuCode());
-					prd.setDmstDiv("A");
-					prd.setPrdDesc(prdHtml.getTag("PROINTRODUCE").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PROINTRODUCE>", ""));
-					prd.setAreaList(this.getAreaList(prd.getPrdNm() + " " + prd.getPrdDesc(), menu.getMenuName()));
-					prd.setDepArpt(ARPT_NAME_CODE.get(depArpt));
-					
-					if (insPrds == null || !insPrds.contains(prd.getPrdNo())){
-						prdList.add(prd);
-						prdCnt++;
+					try{
+						prd.setTagnId(website.getId());
+						prd.setPrdNo(prdHtml.getTag("PRODUCT_CODE").removeAllTags().toString());
+						prd.setPrdNm(prdHtml.getTag("PRODUCT_NAME").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PRODUCT_NAME>", ""));
+						prd.setTrDiv(menu.getMenuCode());
+						prd.setDmstDiv("A");
+						prd.setPrdDesc(prdHtml.getTag("PROINTRODUCE").toString().replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "").replaceAll("<[/]*PROINTRODUCE>", ""));
+						prd.setAreaList(this.getAreaList(prd.getPrdNm() + " " + prd.getPrdDesc(), menu.getMenuName()));
+						prd.setDepArpt(ARPT_NAME_CODE.get(depArpt));
+						
+						if (insPrds == null || !insPrds.contains(prd.getPrdNo())){
+							prdList.add(prd);
+							prdCnt++;
+						}
+					}catch(Exception e){
+						log(this.getClass().getName() + "-scrapPrdList(Prd)", "(" + prd.getPrdNo() + ")" + e.toString());
 					}
-					
 				}
 			}catch(Exception e){
-				log(this.getClass().getName() + "-scrapPrdList", "(" + menu.getMenuUrl() + ")" + e.toString());
+				log(this.getClass().getName() + "-scrapPrdList(Menu)", "(" + menu.getMenuUrl() + ")" + e.toString());
 			}
 			
 		}
@@ -84,8 +86,8 @@ public class HanjinHandler extends _TouristAgencyHandler {
 		ArrayList<PrdDtl> prdDtlList = new ArrayList<PrdDtl>();
 		Html prdDtlHtml = null;
 		
-		try{
-			for (String month : monthSet){
+		for (String month : monthSet){
+			try{
 				String prdDtlSummaryUrl = "http://www.kaltour.com/Content/Product/TourList.aspx?"
 						+ "viewListOrCalendar=Y"
 						+ "&divType=LIST"
@@ -106,93 +108,98 @@ public class HanjinHandler extends _TouristAgencyHandler {
 					prdDtlHtml = prdDtlListHtml.getTag("tr");
 					prdDtlListHtml = prdDtlListHtml.removeTag("tr");
 					
-					String depDt = prdDtlHtml.getTag("li").removeAllTags().toString();
-					String depWkDay = "";
-					String depHm = "0000";
-					if (depDt.substring(0, 2).equals("출발")){
-						depDt = depDt.substring(2);
-						depWkDay = depDt.split("\\(")[1].split("\\)")[0];
-						depWkDay = WEEK_DAY_NUMBER.get(depWkDay);
-						depDt = depDt.replaceAll("\\([\\s\\S]\\)", "").replaceAll("[:\\- ]*", "");
-						depDt = month.substring(0, 4) + depDt;
-						if (depDt.length() > 8 ) depHm = depDt.substring(8, 12);
-						depDt = depDt.substring(0, 8);
-					}
-					String arrDt = prdDtlHtml.removeTag("li").getTag("li").removeAllTags().toString();
-					String arrWkDay = "";
-					String arrHm = "0000";
-					if (arrDt.substring(0, 2).equals("도착")){
-						arrDt = arrDt.substring(2);
-						arrWkDay = arrDt.split("\\(")[1].split("\\)")[0];
-						arrWkDay = WEEK_DAY_NUMBER.get(arrWkDay);
-						arrDt = arrDt.replaceAll("\\([\\s\\S]\\)", "").replaceAll("[:\\- ]*", "");
-						arrDt = month.substring(0, 4) + arrDt;
-						if (arrDt.length() > 8 ) arrHm = arrDt.substring(8, 12);
-						arrDt = arrDt.substring(0, 8);
-					}
-					String prdDtlNm = prdDtlHtml.removeTag("td").getTag("td").removeAllTags().toString().trim();
-					String getPrdDtlUrlArgs[] = prdDtlHtml.removeTag("td").getTag("td").toString().split("<a href=\"javascript:MoveOverseasView\\(")[1].split("\\);")[0].split(",");
-					String prdDtlUrl = this.getPrdDtlUrl(getPrdDtlUrlArgs[0].replaceAll("'", "")
-														, getPrdDtlUrlArgs[1].replaceAll("'", "")
-														, getPrdDtlUrlArgs[2].replaceAll("'", "")
-														, getPrdDtlUrlArgs[3].replaceAll("'", ""));
-					String prdSeq = getPrdDtlUrlArgs[1].replaceAll("'", "");
-					String airLine = "";
-					if (prdDtlHtml.removeTag("td").removeTag("td").getTag("td").toString().split("<img src='/images/icon/").length > 1){
-						airLine = prdDtlHtml.removeTag("td").removeTag("td").getTag("td").toString().split("<img src='/images/icon/")[1].split("\\.")[0];
-						airLine = airLine.substring(airLine.length() - 2, airLine.length());
-					}
-					String feeAd = prdDtlHtml.removeTag("td").removeTag("td").removeTag("td").getTag("td").removeAllTags().toString().split("원")[0].replace("," ,  "");
 					try{
-						int intFeeAd = Integer.parseInt(feeAd);
+						String depDt = prdDtlHtml.getTag("li").removeAllTags().toString();
+						String depWkDay = "";
+						String depHm = "0000";
+						if (depDt.substring(0, 2).equals("출발")){
+							depDt = depDt.substring(2);
+							depWkDay = depDt.split("\\(")[1].split("\\)")[0];
+							depWkDay = WEEK_DAY_NUMBER.get(depWkDay);
+							depDt = depDt.replaceAll("\\([\\s\\S]\\)", "").replaceAll("[:\\- ]*", "");
+							depDt = month.substring(0, 4) + depDt;
+							if (depDt.length() > 8 ) depHm = depDt.substring(8, 12);
+							depDt = depDt.substring(0, 8);
+						}
+						String arrDt = prdDtlHtml.removeTag("li").getTag("li").removeAllTags().toString();
+						String arrWkDay = "";
+						String arrHm = "0000";
+						if (arrDt.substring(0, 2).equals("도착")){
+							arrDt = arrDt.substring(2);
+							arrWkDay = arrDt.split("\\(")[1].split("\\)")[0];
+							arrWkDay = WEEK_DAY_NUMBER.get(arrWkDay);
+							arrDt = arrDt.replaceAll("\\([\\s\\S]\\)", "").replaceAll("[:\\- ]*", "");
+							arrDt = month.substring(0, 4) + arrDt;
+							if (arrDt.length() > 8 ) arrHm = arrDt.substring(8, 12);
+							arrDt = arrDt.substring(0, 8);
+						}
+						String prdDtlNm = prdDtlHtml.removeTag("td").getTag("td").removeAllTags().toString().trim();
+						String getPrdDtlUrlArgs[] = prdDtlHtml.removeTag("td").getTag("td").toString().split("<a href=\"javascript:MoveOverseasView\\(")[1].split("\\);")[0].split(",");
+						String prdDtlUrl = this.getPrdDtlUrl(getPrdDtlUrlArgs[0].replaceAll("'", "")
+															, getPrdDtlUrlArgs[1].replaceAll("'", "")
+															, getPrdDtlUrlArgs[2].replaceAll("'", "")
+															, getPrdDtlUrlArgs[3].replaceAll("'", ""));
+						String prdSeq = getPrdDtlUrlArgs[1].replaceAll("'", "");
+						String airLine = "";
+						if (prdDtlHtml.removeTag("td").removeTag("td").getTag("td").toString().split("<img src='/images/icon/").length > 1){
+							airLine = prdDtlHtml.removeTag("td").removeTag("td").getTag("td").toString().split("<img src='/images/icon/")[1].split("\\.")[0];
+							airLine = airLine.substring(airLine.length() - 2, airLine.length());
+						}
+						String feeAd = prdDtlHtml.removeTag("td").removeTag("td").removeTag("td").getTag("td").removeAllTags().toString().split("원")[0].replace("," ,  "");
+						try{
+							int intFeeAd = Integer.parseInt(feeAd);
+						}catch(Exception e){
+							feeAd = "9999999";
+						}
+						String status = prdDtlHtml.removeTag("td").removeTag("td").removeTag("td").removeTag("td").getTag("td").toString();
+						if (status.contains("09_icon21.gif")){
+		//					마감
+							status = "예약마감";
+						}else if (status.contains("09_icon17.gif")){
+		//					출발확정
+							status = "출발확정";
+						}else if (status.contains("09_icon20.gif")){
+		//					대기예약
+							status = "대기예약";
+						}else if (status.contains("09_icon50.gif")){
+		//					출발예정
+							status = "예약가능";
+						}else if (status.contains("09_icon51.gif")){
+		//					예약중
+							status = "예약가능";
+						}else{
+							status = "예약가능";
+						}
+						status = PRD_STATUS.get(status);
+		
+						PrdDtl prdDtl = new PrdDtl();
+						prdDtl.setTagnId(website.getId());
+						prdDtl.setPrdNo(prd.getPrdNo());
+						prdDtl.setPrdSeq(prdSeq);
+						prdDtl.setDepDt(depDt + depHm);
+						prdDtl.setDepDtYmd(depDt);
+						prdDtl.setDepDtHm(depHm);
+						prdDtl.setDepDtWd(depWkDay);
+						prdDtl.setArrDt(arrDt + arrHm);
+						prdDtl.setArrDtYmd(arrDt);
+						prdDtl.setArrDtHm(arrHm);
+						prdDtl.setArrDtWd(arrWkDay);
+						prdDtl.setDepArpt(prd.getDepArpt());
+						prdDtl.setPrdDtlNm(prdDtlNm);
+						prdDtl.setPrdUrl(prdDtlUrl);
+						prdDtl.setArlnId(airLine);
+						prdDtl.setPrdFeeAd(feeAd);
+						prdDtl.setPrdSt(status);
+						
+						prdDtlList.add(prdDtl);
 					}catch(Exception e){
-						feeAd = "9999999";
+						log(this.getClass().getName() + "-scrapPrdDtlSmmry(PrdDtl)", "(" + prd.getPrdNo() + "/" + month + ")" + e.toString());
 					}
-					String status = prdDtlHtml.removeTag("td").removeTag("td").removeTag("td").removeTag("td").getTag("td").toString();
-					if (status.contains("09_icon21.gif")){
-	//					마감
-						status = "예약마감";
-					}else if (status.contains("09_icon17.gif")){
-	//					출발확정
-						status = "출발확정";
-					}else if (status.contains("09_icon20.gif")){
-	//					대기예약
-						status = "대기예약";
-					}else if (status.contains("09_icon50.gif")){
-	//					출발예정
-						status = "예약가능";
-					}else if (status.contains("09_icon51.gif")){
-	//					예약중
-						status = "예약가능";
-					}else{
-						status = "예약가능";
-					}
-					status = PRD_STATUS.get(status);
-	
-					PrdDtl prdDtl = new PrdDtl();
-					prdDtl.setTagnId(website.getId());
-					prdDtl.setPrdNo(prd.getPrdNo());
-					prdDtl.setPrdSeq(prdSeq);
-					prdDtl.setDepDt(depDt + depHm);
-					prdDtl.setDepDtYmd(depDt);
-					prdDtl.setDepDtHm(depHm);
-					prdDtl.setDepDtWd(depWkDay);
-					prdDtl.setArrDt(arrDt + arrHm);
-					prdDtl.setArrDtYmd(arrDt);
-					prdDtl.setArrDtHm(arrHm);
-					prdDtl.setArrDtWd(arrWkDay);
-					prdDtl.setDepArpt(prd.getDepArpt());
-					prdDtl.setPrdDtlNm(prdDtlNm);
-					prdDtl.setPrdUrl(prdDtlUrl);
-					prdDtl.setArlnId(airLine);
-					prdDtl.setPrdFeeAd(feeAd);
-					prdDtl.setPrdSt(status);
-					
-					prdDtlList.add(prdDtl);
 				}
+				
+			}catch(Exception e){
+				log(this.getClass().getName() + "-scrapPrdDtlSmmry(Month)", "(" + prd.getPrdNo() + "/" + month + ")" + e.toString());
 			}
-		}catch(Exception e){
-			log(this.getClass().getName() + "-scrapPrdDtlSmmry", "(" + prd.getPrdNo() + ")" + e.toString());
 		}
 		
 		return prdDtlList;

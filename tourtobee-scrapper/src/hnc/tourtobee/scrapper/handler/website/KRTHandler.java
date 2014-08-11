@@ -35,29 +35,8 @@ public class KRTHandler extends _TouristAgencyHandler{
 	@Override
 	public ArrayList<Prd> scrapPrdList(CloseableHttpClient httpclient, Website website, HashMap<String, String> options, HashSet<String> insPrds) {
 		ArrayList<Prd> prdList = new ArrayList<Prd>();
-//		ArrayList<Menu> menuList = this.scrapMenu(httpclient, website);
-//		HashMap<String, Menu> prdUrlMenu = new HashMap<String, Menu>();
-//		
-//		for (Menu menu : menuList){
-//			HashSet<String> prdUrlSet = menu.getPrdUrls();
-//			
-//			for (String prdUrl : prdUrlSet){
-//				prdUrlMenu.put(prdUrl, menu);
-//			}
-//		}
-//		
-//		Set<String> prdUrlSet = prdUrlMenu.keySet();
-//		for (String prdUrl : prdUrlSet){
-//			String prdNo = prdUrl.split("good_cd")[1].split("&")[0].replace("=", "");
-//			
-//			if (insPrds == null || !insPrds.contains(prdNo)){
-//				Prd prd = scrapPrd(httpclient, website, prdUrlMenu.get(prdUrl), prdUrl, options);
-//				log("KRT Scrap Prd", prdNo);
-//				
-//				prdList.add(prd);
-//			}
-//		}
 		ArrayList<JsonMenu> jsonMenuList = new ArrayList<KRTHandler.JsonMenu>();
+		
 		try {
 			jsonMenuList = getMenuUrls(this.getHtml(httpclient, website));
 		} catch (IOException e1) {}
@@ -85,48 +64,51 @@ public class KRTHandler extends _TouristAgencyHandler{
 					while ((prdHtml = prdListHtml.getTag("td")).toString().length() > 0){
 						prdListHtml = prdListHtml.removeTag("td");
 						if (prdHtml.findRegex("<a href=\"[^\'\">]*good_cd=[^\'\">]*\"").toString().length() <= 0 ) continue;
-						String url = prdHtml.findRegex("<a href=\"[^\'\">]*good_cd=[^\'\">]*\"").findRegex("(\"[^\"]*\"|\'[^\']*\')").toString().replaceAll("['\"]", "");
-						url = "http://www.krt.co.kr" + url;
-						String prdNo = url.split("good_cd=")[1].split("&")[0];
-						String prdNm = prdHtml.removeTag("div").getTag("div").getTag("table").removeTag("tr").removeTag("tr").getTag("tr").removeAllTags().toString().trim();
-						String prdDesc = prdHtml.removeTag("div").getTag("div").getTag("table").removeTag("tr").removeTag("tr").removeTag("tr").getTag("tr").removeAllTags().toString().trim();
-	
-						
 						Prd prd = new Prd();
-						prd.setTagnId(website.getId());
-						prd.setPrdUrl(url);
-						prd.setPrdNo(prdNo);
-						prd.setPrdNm(prdNm);
-						prd.setPrdDesc(prdDesc);
-						
-						if (jsonMenu.mD1code.equals("G6")){
-							prd.setDepArpt(ARPT_NAME_CODE.get("부산"));
-						}else if (jsonMenu.mMenu.contains("부산출발")){
-							prd.setDepArpt(ARPT_NAME_CODE.get("부산"));
-						}else{
-							prd.setDepArpt(ARPT_NAME_CODE.get("인천"));
+						try{
+							String url = prdHtml.findRegex("<a href=\"[^\'\">]*good_cd=[^\'\">]*\"").findRegex("(\"[^\"]*\"|\'[^\']*\')").toString().replaceAll("['\"]", "");
+							url = "http://www.krt.co.kr" + url;
+							String prdNo = url.split("good_cd=")[1].split("&")[0];
+							String prdNm = prdHtml.removeTag("div").getTag("div").getTag("table").removeTag("tr").removeTag("tr").getTag("tr").removeAllTags().toString().trim();
+							String prdDesc = prdHtml.removeTag("div").getTag("div").getTag("table").removeTag("tr").removeTag("tr").removeTag("tr").getTag("tr").removeAllTags().toString().trim();
+							
+							prd.setTagnId(website.getId());
+							prd.setPrdUrl(url);
+							prd.setPrdNo(prdNo);
+							prd.setPrdNm(prdNm);
+							prd.setPrdDesc(prdDesc);
+							
+							if (jsonMenu.mD1code.equals("G6")){
+								prd.setDepArpt(ARPT_NAME_CODE.get("부산"));
+							}else if (jsonMenu.mMenu.contains("부산출발")){
+								prd.setDepArpt(ARPT_NAME_CODE.get("부산"));
+							}else{
+								prd.setDepArpt(ARPT_NAME_CODE.get("인천"));
+							}
+							
+							if (jsonMenu.mD1code.equals("G3")){
+								prd.setTrDiv(PRD_CLASS.get("허니문"));
+								prd.setDmstDiv("A");
+							}else if (jsonMenu.mD1code.equals("G5")){
+								prd.setTrDiv(PRD_CLASS.get("국내"));
+								prd.setDmstDiv("D");
+							}else if (jsonMenu.mD1code.equals("G7")){
+								prd.setTrDiv(PRD_CLASS.get("골프"));
+								prd.setDmstDiv("A");
+							}else if (jsonMenu.mD1code.equals("G2")){
+								prd.setTrDiv(PRD_CLASS.get("에어텔")); //자유여행
+								prd.setDmstDiv("A");
+							}else {
+								prd.setTrDiv(PRD_CLASS.get("패키지"));
+								prd.setDmstDiv("A");
+							}
+							
+							prd.setAreaList(this.getAreaList(prd.getPrdNm() + " " + prd.getPrdDesc(), jsonMenu.mMenu));
+							
+							prdList.add(prd);
+						}catch(Exception e){
+							log(this.getClass().getName() + " - scrapPrdList(Prd)", "(" + prd.getPrdNo() + ")" + e.toString());
 						}
-						
-						if (jsonMenu.mD1code.equals("G3")){
-							prd.setTrDiv(PRD_CLASS.get("허니문"));
-							prd.setDmstDiv("A");
-						}else if (jsonMenu.mD1code.equals("G5")){
-							prd.setTrDiv(PRD_CLASS.get("국내"));
-							prd.setDmstDiv("D");
-						}else if (jsonMenu.mD1code.equals("G7")){
-							prd.setTrDiv(PRD_CLASS.get("골프"));
-							prd.setDmstDiv("A");
-						}else if (jsonMenu.mD1code.equals("G2")){
-							prd.setTrDiv(PRD_CLASS.get("에어텔")); //자유여행
-							prd.setDmstDiv("A");
-						}else {
-							prd.setTrDiv(PRD_CLASS.get("패키지"));
-							prd.setDmstDiv("A");
-						}
-						
-						prd.setAreaList(this.getAreaList(prd.getPrdNm() + " " + prd.getPrdDesc(), jsonMenu.mMenu));
-						
-						prdList.add(prd);
 					}
 					
 				}else{
@@ -140,55 +122,57 @@ public class KRTHandler extends _TouristAgencyHandler{
 					while ((prdHtml = prdListHtml.getTag("tr")).toString().length() > 0){
 						prdListHtml = prdListHtml.removeTag("tr");
 						if (prdHtml.findRegex("<a href=\"[^\'\">]*good_cd=[^\'\">]*\"").toString().length() <= 0 ) continue;
-						
-						String url = prdHtml.findRegex("<a href=\"[^\'\">]*good_cd=[^\'\">]*\"").findRegex("(\"[^\"]*\"|\'[^\']*\')").toString().replaceAll("['\"]", "");
-						url = "http://www.krt.co.kr" + url;
-						String prdNo = url.split("good_cd=")[1].split("&")[0];
-						String prdNm = prdHtml.getTag("table").removeTag("td").removeTag("td").getTag("td").removeAllTags().toString();
-						String prdDesc = prdHtml.getTag("table").removeTag("tr").getTag("tr").removeTag("td").getTag("td").removeAllTags().toString().trim();
-						prdDesc = prdDesc.split("  ")[0];
-						
-						
 						Prd prd = new Prd();
-						prd.setTagnId(website.getId());
-						prd.setPrdUrl(url);
-						prd.setPrdNo(prdNo);
-						prd.setPrdNm(prdNm);
-						prd.setPrdDesc(prdDesc);
-						
-						if (jsonMenu.mD1code.equals("G6")){
-							prd.setDepArpt(ARPT_NAME_CODE.get("부산"));
-						}else if (jsonMenu.mMenu.contains("부산출발")){
-							prd.setDepArpt(ARPT_NAME_CODE.get("부산"));
-						}else{
-							prd.setDepArpt(ARPT_NAME_CODE.get("인천"));
+						try{
+							String url = prdHtml.findRegex("<a href=\"[^\'\">]*good_cd=[^\'\">]*\"").findRegex("(\"[^\"]*\"|\'[^\']*\')").toString().replaceAll("['\"]", "");
+							url = "http://www.krt.co.kr" + url;
+							String prdNo = url.split("good_cd=")[1].split("&")[0];
+							String prdNm = prdHtml.getTag("table").removeTag("td").removeTag("td").getTag("td").removeAllTags().toString();
+							String prdDesc = prdHtml.getTag("table").removeTag("tr").getTag("tr").removeTag("td").getTag("td").removeAllTags().toString().trim();
+							prdDesc = prdDesc.split("  ")[0];
+							
+							prd.setTagnId(website.getId());
+							prd.setPrdUrl(url);
+							prd.setPrdNo(prdNo);
+							prd.setPrdNm(prdNm);
+							prd.setPrdDesc(prdDesc);
+							
+							if (jsonMenu.mD1code.equals("G6")){
+								prd.setDepArpt(ARPT_NAME_CODE.get("부산"));
+							}else if (jsonMenu.mMenu.contains("부산출발")){
+								prd.setDepArpt(ARPT_NAME_CODE.get("부산"));
+							}else{
+								prd.setDepArpt(ARPT_NAME_CODE.get("인천"));
+							}
+							
+							if (jsonMenu.mD1code.equals("G3")){
+								prd.setTrDiv(PRD_CLASS.get("허니문"));
+								prd.setDmstDiv("A");
+							}else if (jsonMenu.mD1code.equals("G5")){
+								prd.setTrDiv(PRD_CLASS.get("국내"));
+								prd.setDmstDiv("D");
+							}else if (jsonMenu.mD1code.equals("G7")){
+								prd.setTrDiv(PRD_CLASS.get("골프"));
+								prd.setDmstDiv("A");
+							}else if (jsonMenu.mD1code.equals("G2")){
+								prd.setTrDiv(PRD_CLASS.get("에어텔")); //자유여행
+								prd.setDmstDiv("A");
+							}else {
+								prd.setTrDiv(PRD_CLASS.get("패키지"));
+								prd.setDmstDiv("A");
+							}
+							
+							prd.setAreaList(this.getAreaList(prd.getPrdNm() + " " + prd.getPrdDesc(), jsonMenu.mMenu));
+							
+							prdList.add(prd);
+						}catch(Exception e){
+							log(this.getClass().getName() + " - scrapPrdList(Prd)", "(" + prd.getPrdNo() + ")" + e.toString());
 						}
-						
-						if (jsonMenu.mD1code.equals("G3")){
-							prd.setTrDiv(PRD_CLASS.get("허니문"));
-							prd.setDmstDiv("A");
-						}else if (jsonMenu.mD1code.equals("G5")){
-							prd.setTrDiv(PRD_CLASS.get("국내"));
-							prd.setDmstDiv("D");
-						}else if (jsonMenu.mD1code.equals("G7")){
-							prd.setTrDiv(PRD_CLASS.get("골프"));
-							prd.setDmstDiv("A");
-						}else if (jsonMenu.mD1code.equals("G2")){
-							prd.setTrDiv(PRD_CLASS.get("에어텔")); //자유여행
-							prd.setDmstDiv("A");
-						}else {
-							prd.setTrDiv(PRD_CLASS.get("패키지"));
-							prd.setDmstDiv("A");
-						}
-						
-						prd.setAreaList(this.getAreaList(prd.getPrdNm() + " " + prd.getPrdDesc(), jsonMenu.mMenu));
-						
-						prdList.add(prd);
 					}
 				}
 			
 			}catch(Exception e){
-				log(this.getClass().getName() + " - scrapPrdList", "(" + jsonMenu.mLink + ")" + e.toString());
+				log(this.getClass().getName() + " - scrapPrdList(Menu)", "(" + jsonMenu.mLink + ")" + e.toString());
 			}
 			
 		}
@@ -209,92 +193,94 @@ public class KRTHandler extends _TouristAgencyHandler{
 		ArrayList<PrdDtl> prdDtlList = new ArrayList<PrdDtl>();
 	
 		for (String month : monthSet){
-			
-			String prtType = prd.getPrdUrl().split("/")[prd.getPrdUrl().split("/").length - 1].split("_")[0];
-
-			String prdDtlListUrl = "http://www.krt.co.kr/_inc2014/_StartList.asp?"
-							+ "param1=" + prd.getPrdNo()
-							+ "&param2=" + month
-							+ "&param3=" + getSystemMonth()
-							+ "&param4=" + prtType
-							+ "&param5=0"
-							+ "&param6=" + getSystemMonth();
-			Website prdDtlListSite = new Website();
-			prdDtlListSite.setUrl(prdDtlListUrl);
-			prdDtlListSite.setMethod("GET");
-			prdDtlListSite.setEncoding(website.getEncoding());
-			
-			Html prdDtlListHtml = new Html(this.getHtml(httpclient, prdDtlListSite));
-			prdDtlListHtml = prdDtlListHtml.getTag("div").getTag("table");
-			prdDtlListHtml = new Html(prdDtlListHtml.toString().substring(1));
-			
-			while (true){
-				try{
+			try{
+				String prtType = prd.getPrdUrl().split("/")[prd.getPrdUrl().split("/").length - 1].split("_")[0];
+	
+				String prdDtlListUrl = "http://www.krt.co.kr/_inc2014/_StartList.asp?"
+								+ "param1=" + prd.getPrdNo()
+								+ "&param2=" + month
+								+ "&param3=" + getSystemMonth()
+								+ "&param4=" + prtType
+								+ "&param5=0"
+								+ "&param6=" + getSystemMonth();
+				Website prdDtlListSite = new Website();
+				prdDtlListSite.setUrl(prdDtlListUrl);
+				prdDtlListSite.setMethod("GET");
+				prdDtlListSite.setEncoding(website.getEncoding());
+				
+				Html prdDtlListHtml = new Html(this.getHtml(httpclient, prdDtlListSite));
+				prdDtlListHtml = prdDtlListHtml.getTag("div").getTag("table");
+				prdDtlListHtml = new Html(prdDtlListHtml.toString().substring(1));
+				
+				while (true){
 					String subHtmlStr = prdDtlListHtml.getTag("table").toString();
-					
+					prdDtlListHtml = prdDtlListHtml.removeTag("table");
 					if (subHtmlStr.trim().length() <= 0) break;
 					
-					Html subHtml = new Html(subHtmlStr);
-					String depDt = subHtml.getTag("TD").removeAllTags().convertSpecialChar().toString();
-					String wkDay =  depDt.split("\\(")[1].substring(0, 1);
-					depDt = month.substring(0, 4) + depDt.split("\\(")[0].replace("/", "").trim();
-					
-					String feeAd = subHtml.removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString();
-					feeAd = feeAd.replace(",", "").trim();
-					String seq = subHtml.removeTag("TD").removeTag("TD").getTag("TD").toString();
-					String seqArr[] = seq.split("((?i)href)=[\"\']")[1].split("((?i)catNum)=")[1].split("_");
-					seq = seqArr[4] + "_" + seqArr[5];
-					String url = subHtml.removeTag("TD").removeTag("TD").getTag("TD").toString();
-					url = url.split("((?i)href)=[\"']\\.\\./")[1].split("[\"']")[0];
-					url = "http://www.krt.co.kr/" + url;
-					String name = subHtml.removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
-					String airLine = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").toString();
-					airLine = airLine.split("alt=[\"\']")[1];
-					airLine = airLine.split("[\"\']")[0];
-					String depTm = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString();
-					depTm = depTm.replaceAll("[\\(|\\)|:]*", "").trim();
-					String prdSt = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
-					if (prdSt.equals("예약마감")){
-						prdSt = "예약마감";
-					}else if (prdSt.equals("예약대기")){
-						prdSt = "대기예약";
-					}else if (prdSt.equals("예약가능")){
-						prdSt = "예약가능";
-					}else if (prdSt.equals("출발예정")){
-						prdSt = "예약가능";
-					}else if (prdSt.equals("출발확정")){
-						prdSt = "출발확정";
-					}else if (prdSt.equals("마감임박")){
-						prdSt = "예약가능";
-					}else{
-						prdSt = "예약가능";
+					try{
+						
+						Html subHtml = new Html(subHtmlStr);
+						String depDt = subHtml.getTag("TD").removeAllTags().convertSpecialChar().toString();
+						String wkDay =  depDt.split("\\(")[1].substring(0, 1);
+						depDt = month.substring(0, 4) + depDt.split("\\(")[0].replace("/", "").trim();
+						
+						String feeAd = subHtml.removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString();
+						feeAd = feeAd.replace(",", "").trim();
+						String seq = subHtml.removeTag("TD").removeTag("TD").getTag("TD").toString();
+						String seqArr[] = seq.split("((?i)href)=[\"\']")[1].split("((?i)catNum)=")[1].split("_");
+						seq = seqArr[4] + "_" + seqArr[5];
+						String url = subHtml.removeTag("TD").removeTag("TD").getTag("TD").toString();
+						url = url.split("((?i)href)=[\"']\\.\\./")[1].split("[\"']")[0];
+						url = "http://www.krt.co.kr/" + url;
+						String name = subHtml.removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
+						String airLine = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").toString();
+						airLine = airLine.split("alt=[\"\']")[1];
+						airLine = airLine.split("[\"\']")[0];
+						String depTm = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString();
+						depTm = depTm.replaceAll("[\\(|\\)|:]*", "").trim();
+						String prdSt = subHtml.removeTag("TD").removeTag("TD").removeTag("TD").removeTag("TD").getTag("TD").removeAllTags().convertSpecialChar().toString().trim();
+						if (prdSt.equals("예약마감")){
+							prdSt = "예약마감";
+						}else if (prdSt.equals("예약대기")){
+							prdSt = "대기예약";
+						}else if (prdSt.equals("예약가능")){
+							prdSt = "예약가능";
+						}else if (prdSt.equals("출발예정")){
+							prdSt = "예약가능";
+						}else if (prdSt.equals("출발확정")){
+							prdSt = "출발확정";
+						}else if (prdSt.equals("마감임박")){
+							prdSt = "예약가능";
+						}else{
+							prdSt = "예약가능";
+						}
+						
+						
+		//				System.out.println(depDt + "/" + wkDay + "/" + feeAd + "/" + seq + "/" + name + "/" + depTm + "/" + prdSt);
+		//				System.out.println("==================================");
+						PrdDtl prdDtl = new PrdDtl();
+						prdDtl.setTagnId(prd.getTagnId());
+						prdDtl.setPrdNo(prd.getPrdNo());
+						prdDtl.setPrdSeq(seq);
+						prdDtl.setDepDt(depDt + depTm);
+						prdDtl.setDepDtYmd(depDt);
+						prdDtl.setDepDtHm(depTm);
+						prdDtl.setDepDtWd(WEEK_DAY_NUMBER.get(wkDay));
+						prdDtl.setPrdUrl(url);
+						prdDtl.setPrdDtlNm(name);
+						prdDtl.setArlnId(airLine);
+						prdDtl.setPrdFeeAd(feeAd);
+						prdDtl.setPrdSt(PRD_STATUS.get(prdSt));
+						prdDtl.setDepArpt(prd.getDepArpt());
+						
+						prdDtlList.add(prdDtl);
+					}catch(Exception e){
+						log(this.getClass().getName() + "-scrapPrdDtlSmmry(PrdDtl)", "(" + prd.getPrdNo() + "/" + month + ")" + e.toString());
 					}
-					
-					prdDtlListHtml = prdDtlListHtml.removeTag("table");
-					
-	//				System.out.println(depDt + "/" + wkDay + "/" + feeAd + "/" + seq + "/" + name + "/" + depTm + "/" + prdSt);
-	//				System.out.println("==================================");
-					PrdDtl prdDtl = new PrdDtl();
-					prdDtl.setTagnId(prd.getTagnId());
-					prdDtl.setPrdNo(prd.getPrdNo());
-					prdDtl.setPrdSeq(seq);
-					prdDtl.setDepDt(depDt + depTm);
-					prdDtl.setDepDtYmd(depDt);
-					prdDtl.setDepDtHm(depTm);
-					prdDtl.setDepDtWd(WEEK_DAY_NUMBER.get(wkDay));
-					prdDtl.setPrdUrl(url);
-					prdDtl.setPrdDtlNm(name);
-					prdDtl.setArlnId(airLine);
-					prdDtl.setPrdFeeAd(feeAd);
-					prdDtl.setPrdSt(PRD_STATUS.get(prdSt));
-					prdDtl.setDepArpt(prd.getDepArpt());
-					
-					prdDtlList.add(prdDtl);
-				}catch(Exception e){
-					log(this.getClass().getName() + "-scrapPrdDtlSmmry", "(" + prd.getPrdNo() + ")" + e.toString());
 				}
+			}catch(Exception e){
+				log(this.getClass().getName() + "-scrapPrdDtlSmmry(Month)", "(" + prd.getPrdNo() + "/" + month + ")" + e.toString());
 			}
-			
 		}
 	
 		return prdDtlList;
